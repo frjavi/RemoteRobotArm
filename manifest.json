@@ -1,9 +1,15 @@
 {
-  "name": "Control Brazo Robotico BLE",
-  "short_name": "Brazo BLE",
+  "name": "Control Brazo Robotico",
+  "short_name": "Mando Brazo",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f0f2f5",
-  "theme_color": "#007bff",
-  "orientation": "portrait"
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
