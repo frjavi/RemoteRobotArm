@@ -3,128 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brazo Robótico BLE</title>
+    <title>Control de Brazo Robot</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            text-align: center;
-            background-color: #f0f2f5;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-        .btn-connect {
-            background-color: #007bff;
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
+
+        .btn-ble {
+            background-color: #007acc;
             color: white;
-            padding: 14px 28px;
-            font-size: 16px;
             border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .grid-control {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        .btn-cmd {
-            background-color: #28a745;
-            color: white;
-            padding: 22px;
-            font-size: 18px;
+            padding: 10px 15px;
+            border-radius: 5px;
             font-weight: bold;
-            border: none;
-            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .btn-cmd:active { background-color: #1e7e34; transform: scale(0.96); }
-        #status { margin-top: 15px; font-weight: bold; color: #666; }
+
+        .btn-ble.connected {
+            background-color: #28a745;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .controls-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: center;
+            max-width: 450px;
+            background-color: #181818;
+        }
+
+        .speed-panel {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .label-name {
+            width: 110px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .slider {
+            flex: 1;
+            accent-color: #007acc;
+            cursor: pointer;
+        }
+
+        .angle-box {
+            width: 55px;
+            background-color: #000;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-align: center;
+            padding: 4px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #00ffcc;
+        }
+
+        .viewer-panel {
+            flex: 1.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: #121212;
+        }
+
+        .viewer-panel img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Control del Brazo Robótico</h1>
-    <button class="btn-connect" onclick="conectarBLE()">🔌 Conectar Brazo</button>
-    <div id="status">Estado: Desconectado</div>
+    <header>
+        <h2>Mando Brazo Robótico</h2>
+        <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
+    </header>
 
-    <br><br>
+    <div class="main-container">
+        <div class="controls-panel">
+            
+            <div class="speed-panel">
+                <div class="control-group" style="background: #2a2015; border-color: #ff990022;">
+                    <span class="label-name" style="color: #ff9900;">Velocidad</span>
+                    <input type="range" min="1" max="45" value="10" class="slider" id="speedSlider" style="accent-color: #ff9900;">
+                    <span class="angle-box" id="speedBox" style="color: #ff9900;">10°/s</span>
+                </div>
+            </div>
 
-    <div class="grid-control">
-        <button class="btn-cmd" onclick="enviarComando('A')">⬅️ Izquierda</button>
-        <button class="btn-cmd" onclick="enviarComando('D')">Derecha ➡️</button>
-        <button class="btn-cmd" onclick="enviarComando('W')">⬆️ Arriba</button>
-        <button class="btn-cmd" onclick="enviarComando('S')">Abajo ⬇️</button>
-        <button class="btn-cmd" onclick="enviarComando('O')">✊ Abrir Pinza</button>
-        <button class="btn-cmd" onclick="enviarComando('C')">🖐️ Cerrar Pinza</button>
+            <div class="control-group">
+                <span class="label-name">Pinza</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="pinza">
+                <span class="angle-box" id="pinzaBox">90°</span>
+            </div>
+
+            <div class="control-group">
+                <span class="label-name">Muñeca (Giro)</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="munecaGiro">
+                <span class="angle-box" id="munecaGiroBox">90°</span>
+            </div>
+
+            <div class="control-group">
+                <span class="label-name">Muñeca</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="muneca">
+                <span class="angle-box" id="munecaBox">90°</span>
+            </div>
+
+            <div class="control-group">
+                <span class="label-name">Codo</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="codo">
+                <span class="angle-box" id="codoBox">90°</span>
+            </div>
+
+            <div class="control-group">
+                <span class="label-name">Hombro</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="hombro">
+                <span class="angle-box" id="hombroBox">90°</span>
+            </div>
+
+            <div class="control-group">
+                <span class="label-name">Rotación Base</span>
+                <input type="range" min="0" max="180" value="90" class="slider" id="rotacion">
+                <span class="angle-box" id="rotacionBox">90°</span>
+            </div>
+
+        </div>
+
+        <div class="viewer-panel">
+            <img src="edited-image.png" alt="Brazo Robot">
+        </div>
     </div>
 
-<script>
-    const NORDIC_UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-    const RX_CHARACTERISTIC_UUID   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
 
-    let rxCharacteristic = null;
-    let bleDevice = null;
-
-    async function conectarBLE() {
-        const statusDiv = document.getElementById('status');
-        try {
-            statusDiv.innerHTML = "Buscando cualquier dispositivo Bluetooth...";
+        // Vincular interfaz a los cuadros de texto dinámicos
+        const ids = ['pinza', 'munecaGiro', 'muneca', 'codo', 'hombro', 'rotacion'];
         
-            // MODO LAXO: Acepta todo lo que encuentre en el aire
-            bleDevice = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: [NORDIC_UART_SERVICE_UUID] // Avisamos qué carpeta abriremos después
+        ids.forEach(id => {
+            const slider = document.getElementById(id);
+            const box = document.getElementById(id + 'Box');
+            slider.addEventListener('input', () => {
+                box.innerText = slider.value + '°';
+                enviarComando(id, slider.value);
             });
-
-            statusDiv.innerHTML = "Conectando...";
-            const server = await bleDevice.gatt.connect();
-        
-            statusDiv.innerHTML = "Abriendo canal UART...";
-            const service = await server.getPrimaryService(NORDIC_UART_SERVICE_UUID);
-            rxCharacteristic = await service.getCharacteristic(RX_CHARACTERISTIC_UUID);
-
-            statusDiv.innerHTML = "🟢 ¡Conectado a " + bleDevice.name + "!";
-            statusDiv.style.color = "green";
-
-            bleDevice.addEventListener('gattserverdisconnected', () => {
-                statusDiv.innerHTML = "🔴 Dispositivo desconectado";
-                statusDiv.style.color = "red";
-                rxCharacteristic = null;
-            });
-        } catch (error) {
-            statusDiv.innerHTML = "❌ Error: " + error.message;
-            statusDiv.style.color = "red";
-        }
-    }
-
-    async function enviarComando(letra) {
-        if (!rxCharacteristic) {
-            alert("¡Primero debes conectar el Bluetooth!");
-            return;
-        }
-        try {
-            const encoder = new TextEncoder();
-            await rxCharacteristic.writeValue(encoder.encode(letra));
-            console.log("Enviado: " + letra);
-        } catch (error) {
-            console.error("Error:", error);
-        }
-    }
-
-    // REGISTRO DEL SERVICE WORKER (Para que funcione Offline)
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registrado con éxito'))
-                .catch(err => console.error('Error al registrar Service Worker', err));
         });
-    }
-</script>
+
+        // Control del Slider de Velocidad
+        const speedSlider = document.getElementById('speedSlider');
+        const speedBox = document.getElementById('speedBox');
+        speedSlider.addEventListener('input', () => {
+            speedBox.innerText = speedSlider.value + '°/s';
+        });
+
+        // Simulación o envío real de la trama de datos
+        function enviarComando(articulacion, angulo) {
+            const velocidadActual = speedSlider.value;
+            // Aquí compones la cadena. Por ejemplo: "Hombro:120,V:10"
+            console.log(`Enviando por BLE -> ID: ${articulacion}, Ángulo: ${angulo}°, Vel: ${velocidadActual}°/s`);
+        }
+    </script>
 </body>
 </html>
