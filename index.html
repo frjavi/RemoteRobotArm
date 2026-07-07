@@ -34,6 +34,7 @@
             border-radius: 5px;
             font-weight: bold;
             cursor: pointer;
+            transition: background 0.3s;
         }
 
         .btn-ble.connected {
@@ -47,20 +48,22 @@
         }
 
         .controls-panel {
-            flex: 1;
-            padding: 20px;
+            width: 380px;
+            min-width: 350px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            justify-content: center;
-            max-width: 450px;
+            gap: 10px; /* Espaciado fijo y controlado */
+            justify-content: flex-start; /* Todo alineado hacia arriba, sin huecos raros */
             background-color: #181818;
+            border-right: 1px solid #333;
+            overflow-y: auto;
         }
 
         .speed-panel {
             border-bottom: 2px solid #333;
-            padding-bottom: 15px;
-            margin-bottom: 10px;
+            padding-bottom: 12px;
+            margin-bottom: 5px;
         }
 
         .control-group {
@@ -68,7 +71,7 @@
             align-items: center;
             gap: 10px;
             background: #222;
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid #333;
         }
@@ -98,16 +101,15 @@
         }
 
         .viewer-panel {
-            flex: 1.2;
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
             background-color: #121212;
         }
 
         .viewer-panel img {
-            max-width: 90%;
+            max-width: 95%;
             max-height: 90vh;
             object-fit: contain;
         }
@@ -116,7 +118,7 @@
 <body>
 
     <header>
-        <h2>Mando Brazo Robótico</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Mando Brazo Robótico</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -124,48 +126,19 @@
         <div class="controls-panel">
             
             <div class="speed-panel">
-                <div class="control-group" style="background: #2a2015; border-color: #ff990022;">
+                <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
                     <span class="label-name" style="color: #ff9900;">Velocidad</span>
                     <input type="range" min="1" max="45" value="10" class="slider" id="speedSlider" style="accent-color: #ff9900;">
                     <span class="angle-box" id="speedBox" style="color: #ff9900;">10°/s</span>
                 </div>
             </div>
 
-            <div class="control-group">
-                <span class="label-name">Pinza</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="pinza">
-                <span class="angle-box" id="pinzaBox">90°</span>
-            </div>
-
-            <div class="control-group">
-                <span class="label-name">Muñeca (Giro)</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="munecaGiro">
-                <span class="angle-box" id="munecaGiroBox">90°</span>
-            </div>
-
-            <div class="control-group">
-                <span class="label-name">Muñeca</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="muneca">
-                <span class="angle-box" id="munecaBox">90°</span>
-            </div>
-
-            <div class="control-group">
-                <span class="label-name">Codo</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="codo">
-                <span class="angle-box" id="codoBox">90°</span>
-            </div>
-
-            <div class="control-group">
-                <span class="label-name">Hombro</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="hombro">
-                <span class="angle-box" id="hombroBox">90°</span>
-            </div>
-
-            <div class="control-group">
-                <span class="label-name">Rotación Base</span>
-                <input type="range" min="0" max="180" value="90" class="slider" id="rotacion">
-                <span class="angle-box" id="rotacionBox">90°</span>
-            </div>
+            <div class="control-group"><span class="label-name">Pinza</span><input type="range" min="0" max="180" value="90" class="slider" id="pinza"><span class="angle-box" id="pinzaBox">90°</span></div>
+            <div class="control-group"><span class="label-name">Muñeca (Giro)</span><input type="range" min="0" max="180" value="90" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">90°</span></div>
+            <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="180" value="90" class="slider" id="muneca"><span class="angle-box" id="munecaBox">90°</span></div>
+            <div class="control-group"><span class="label-name">Codo</span><input type="range" min="0" max="180" value="90" class="slider" id="codo"><span class="angle-box" id="codoBox">90°</span></div>
+            <div class="control-group"><span class="label-name">Hombro</span><input type="range" min="0" max="180" value="90" class="slider" id="hombro"><span class="angle-box" id="hombroBox">90°</span></div>
+            <div class="control-group"><span class="label-name">Rotación Base</span><input type="range" min="0" max="180" value="90" class="slider" id="rotacion"><span class="angle-box" id="rotacionBox">90°</span></div>
 
         </div>
 
@@ -179,30 +152,70 @@
             navigator.serviceWorker.register('sw.js');
         }
 
-        // Vincular interfaz a los cuadros de texto dinámicos
+        let txCharacteristic = null;
+        const connectBtn = document.getElementById('connectBle');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedBox = document.getElementById('speedBox');
+
+        // Escuchar el deslizador de velocidad
+        speedSlider.addEventListener('input', () => {
+            speedBox.innerText = speedSlider.value + '°/s';
+        });
+
+        // Configurar los 6 deslizadores de las articulaciones
         const ids = ['pinza', 'munecaGiro', 'muneca', 'codo', 'hombro', 'rotacion'];
-        
         ids.forEach(id => {
             const slider = document.getElementById(id);
             const box = document.getElementById(id + 'Box');
             slider.addEventListener('input', () => {
                 box.innerText = slider.value + '°';
-                enviarComando(id, slider.value);
+                enviarTrama(id, slider.value);
             });
         });
 
-        // Control del Slider de Velocidad
-        const speedSlider = document.getElementById('speedSlider');
-        const speedBox = document.getElementById('speedBox');
-        speedSlider.addEventListener('input', () => {
-            speedBox.innerText = speedSlider.value + '°/s';
+        // Lógica de Conexión BLE (Modo Laxo / Acepta cualquier dispositivo)
+        connectBtn.addEventListener('click', async () => {
+            try {
+                connectBtn.innerText = "🔍 Buscando...";
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] // UUID típico del servicio UART de Nordic
+                });
+
+                connectBtn.innerText = "⚡ Conectando...";
+                const server = await device.gatt.connect();
+                
+                // Intentamos pillar el servicio UART si existe
+                try {
+                    const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+                    txCharacteristic = await service.getCharacteristic('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
+                } catch (e) {
+                    console.log("No usa servicio UART estándar, pero conectado.");
+                }
+
+                connectBtn.innerText = "🟢 ¡Conectado!";
+                connectBtn.classList.add('connected');
+            } catch (error) {
+                console.error(error);
+                connectBtn.innerText = "❌ Error / Cancelado";
+                connectBtn.classList.remove('connected');
+            }
         });
 
-        // Simulación o envío real de la trama de datos
-        function enviarComando(articulacion, angulo) {
-            const velocidadActual = speedSlider.value;
-            // Aquí compones la cadena. Por ejemplo: "Hombro:120,V:10"
-            console.log(`Enviando por BLE -> ID: ${articulacion}, Ángulo: ${angulo}°, Vel: ${velocidadActual}°/s`);
+        // Enviar datos hacia el ESP32-S3
+        function enviarTrama(articulacion, angulo) {
+            const velocidad = speedSlider.value;
+            // Estructura de la cadena de texto: "articulacion:angulo,v:velocidad"
+            // Ejemplo: "hombro:120,v:10"
+            const cadena = `${articulacion}:${angulo},v:${velocidad}\n`;
+            
+            console.log("Enviando local:", cadena);
+
+            if (txCharacteristic) {
+                const encoder = new TextEncoder();
+                txCharacteristic.writeValue(encoder.encode(cadena))
+                    .catch(err => console.log("Error al transmitir por BLE:", err));
+            }
         }
     </script>
 </body>
