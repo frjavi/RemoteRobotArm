@@ -167,7 +167,7 @@
         ids.forEach(id => {
             const slider = document.getElementById(id);
             const box = document.getElementById(id + 'Box');
-            slider.addEventListener('input', () => {
+            slider.addEventListener('change', () => {
                 box.innerText = slider.value + '°';
                 enviarTrama(id, slider.value);
             });
