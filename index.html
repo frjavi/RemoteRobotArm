@@ -109,9 +109,9 @@
         }
 
         .viewer-panel img {
-            max-width: 100%;             /* ◄ Aprovecha todo el ancho si es necesario sin deformarse */
-            max-height: 100%;            /* ◄ Mantiene la proporción */
-            object-fit: contain;
+            width: auto;                  /* Deja que el ancho se ajuste proporcionalmente si es necesario... */
+            height: 100%;                 /* ◄ ¡OBLIGATORIO! Fuerza a la imagen a medir exactamente el alto del panel */
+            object-fit: fill;
         }
     </style>
 </head>
