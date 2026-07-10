@@ -68,14 +68,14 @@
 
     /* --- PANEL DE SLIDERS --- */
     .controls-panel {
-        flex: 1;
+        width: 320px;            /* ◄ CLAVE: Deja de ser flexible. Elige el ancho que quieras para los sliders (ej. 300px, 320px o 350px) */
+        min-width: 320px;
         padding: 10px;
         display: flex;
         flex-direction: column;
         gap: 6px;
         background-color: #181818;
         border: 1px solid #333;
-        /* ◄ Mantiene bordes redondeados a la izquierda, pero los de la derecha quedan rectos */
         border-radius: 8px 0 0 8px; 
         box-sizing: border-box;
         height: 100%;
@@ -130,8 +130,9 @@
 
     /* --- VISOR DERECHO TOTALMENTE FRENADO --- */
     .viewer-panel {
+        flex: 1;                 /* ◄ CLAVE: Ahora este es el que absorbe todo el espacio libre de la PC */
         display: flex;
-        justify-content: flex-start; /* ◄ Asegura que el contenido empiece a la izquierda */
+        justify-content: flex-start; 
         align-items: center;
         background-color: #121212;
         border: 1px solid #333;
@@ -139,8 +140,8 @@
         border-radius: 0 8px 8px 0; 
         box-sizing: border-box;
         height: 100%;
-        padding: 0 !important;      /* ◄ Elimina cualquier padding residual */
-        margin: 0 !important;       /* ◄ Elimina cualquier margen residual */
+        padding: 0;
+        margin: 0;
         overflow: hidden;
     }
 
@@ -149,10 +150,8 @@
         width: auto !important;
         object-fit: contain;
         display: block;
-    
-        /* ⚠️ LAS DOS LÍNEAS CLAVE PARA ELIMINAR EL AIRE ⚠️ */
-        margin-left: 0 !important;   /* ◄ Fuerza a la imagen a pegarse al borde izquierdo del bloque */
-        margin-right: auto;          /* Empuja el espacio vacío sobrante hacia la derecha de la pantalla */
+        margin-left: 0 !important; /* Pegada al ras izquierdo de su contenedor */
+        margin-right: auto;
     }
 </style>
 </head>
