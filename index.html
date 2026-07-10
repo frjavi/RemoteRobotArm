@@ -41,77 +41,87 @@
             background-color: #28a745;
         }
 
+        /* --- CONTENEDOR PRINCIPAL --- */
         .main-container {
             display: flex;
             flex: 1;
             overflow: hidden;
+            align-items: flex-start;  /* ◄ Evita que los paneles se estiren al infinito hacia abajo */
+            padding: 15px;
         }
 
+        /* --- PANEL IZQUIERDO ULTRA COMPACTO --- */
         .controls-panel {
-            width: 280px;
-            min-width: 250px;
-            padding: 15px;
+            width: 230px;
+            min-width: 210px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Espaciado fijo y controlado */
-            justify-content: flex-start; /* Todo alineado hacia arriba, sin huecos raros */
+            gap: 8px;
             background-color: #181818;
-            border-right: 1px solid #333;
-            overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 8px;
         }
 
         .speed-panel {
             border-bottom: 2px solid #333;
-            padding-bottom: 12px;
+            padding-bottom: 10px;
             margin-bottom: 5px;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             background: #222;
-            padding: 8px 12px;
+            padding: 6px 8px;
             border-radius: 8px;
             border: 1px solid #333;
         }
 
         .label-name {
-            width: 110px;
+            width: 75px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .slider {
             flex: 1;
+            min-width: 0; /* Permite que la barra azul se encoja correctamente */
             accent-color: #007acc;
             cursor: pointer;
         }
 
         .angle-box {
-            width: 55px;
+            width: 45px;
             background-color: #000;
             border: 1px solid #444;
             border-radius: 4px;
             text-align: center;
-            padding: 4px 0;
+            padding: 2px 0;
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #00ffcc;
         }
 
+        /* --- VISOR DERECHO ACOPLADO EN ALTURA --- */
         .viewer-panel {
-            flex: 1;
+            align-self: stretch;      /* ◄ Se estira verticalmente calcando el alto de .controls-panel */
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
             background-color: #121212;
+            padding: 0;
+            overflow: hidden;
         }
 
         .viewer-panel img {
-            width: auto;                  /* Deja que el ancho se ajuste proporcionalmente si es necesario... */
-            height: 100%;                 /* ◄ ¡OBLIGATORIO! Fuerza a la imagen a medir exactamente el alto del panel */
-            object-fit: fill;
+            height: 100%;             /* ◄ Mide exactamente el mismo alto que el panel de sliders */
+            width: auto;
+            object-fit: fill;         /* Estira la imagen en vertical para mantener el alineado de las líneas */
         }
     </style>
 </head>
@@ -129,16 +139,16 @@
                 <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
                     <span class="label-name" style="color: #ff9900;">Velocidad</span>
                     <input type="range" min="1" max="45" value="10" class="slider" id="speedSlider" style="accent-color: #ff9900;">
-                    <span class="angle-box" id="speRedBox" style="color: #ff9900;">10°/s</span>
+                    <span class="angle-box" id="speedBox" style="color: #ff9900;">10°/s</span>
                 </div>
             </div>
 
             <div class="control-group"><span class="label-name">Pinza</span><input type="range" min="0" max="180" value="90" class="slider" id="pinza"><span class="angle-box" id="pinzaBox">90°</span></div>
-            <div class="control-group"><span class="label-name">Muñeca (Giro)</span><input type="range" min="0" max="180" value="90" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">90°</span></div>
-            <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="180" value="90" class="slider" id="muneca"><span class="angle-box" id="munecaBox">90°</span></div>
-            <div class="control-group"><span class="label-name">Codo</span><input type="range" min="0" max="180" value="90" class="slider" id="codo"><span class="angle-box" id="codoBox">90°</span></div>
-            <div class="control-group"><span class="label-name">Hombro</span><input type="range" min="0" max="180" value="90" class="slider" id="hombro"><span class="angle-box" id="hombroBox">90°</span></div>
-            <div class="control-group"><span class="label-name">Rotación Base</span><input type="range" min="0" max="180" value="90" class="slider" id="rotacion"><span class="angle-box" id="rotacionBox">90°</span></div>
+            <div class="control-group"><span class="label-name">M. Giro</span><input type="range" min="0" max="270" value="135" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">135°</span></div>
+            <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="270" value="135" class="slider" id="muneca"><span class="angle-box" id="munecaBox">135°</span></div>
+            <div class="control-group"><span class="label-name">Codo</span><input type="range" min="0" max="270" value="135" class="slider" id="codo"><span class="angle-box" id="codoBox">135°</span></div>
+            <div class="control-group"><span class="label-name">Hombro</span><input type="range" min="0" max="270" value="135" class="slider" id="hombro"><span class="angle-box" id="hombroBox">135°</span></div>
+            <div class="control-group"><span class="label-name">Base</span><input type="range" min="0" max="270" value="135" class="slider" id="rotacion"><span class="angle-box" id="rotacionBox">135°</span></div>
 
         </div>
 
@@ -157,35 +167,36 @@
         const speedSlider = document.getElementById('speedSlider');
         const speedBox = document.getElementById('speedBox');
 
-        // Escuchar el deslizador de velocidad
         speedSlider.addEventListener('input', () => {
             speedBox.innerText = speedSlider.value + '°/s';
         });
 
-        // Configurar los 6 deslizadores de las articulaciones
         const ids = ['pinza', 'munecaGiro', 'muneca', 'codo', 'hombro', 'rotacion'];
         ids.forEach(id => {
             const slider = document.getElementById(id);
             const box = document.getElementById(id + 'Box');
+
+            slider.addEventListener('input', () => {
+                box.innerText = slider.value + '°';
+            });
+
             slider.addEventListener('change', () => {
                 box.innerText = slider.value + '°';
                 enviarTrama(id, slider.value);
             });
         });
 
-        // Lógica de Conexión BLE (Modo Laxo / Acepta cualquier dispositivo)
         connectBtn.addEventListener('click', async () => {
             try {
                 connectBtn.innerText = "🔍 Buscando...";
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] // UUID típico del servicio UART de Nordic
+                    optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']
                 });
 
                 connectBtn.innerText = "⚡ Conectando...";
                 const server = await device.gatt.connect();
                 
-                // Intentamos pillar el servicio UART si existe
                 try {
                     const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
                     txCharacteristic = await service.getCharacteristic('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
@@ -202,14 +213,11 @@
             }
         });
 
-        // Enviar datos hacia el ESP32-S3
         function enviarTrama(articulacion, angulo) {
             const velocidad = speedSlider.value;
-            // Estructura de la cadena de texto: "articulacion:angulo,v:velocidad"
-            // Ejemplo: "hombro:120,v:10"
             const cadena = `${articulacion}:${angulo},v:${velocidad}\n`;
             
-            console.log("Enviando local:", cadena);
+            console.log("Enviando por BLE:", cadena);
 
             if (txCharacteristic) {
                 const encoder = new TextEncoder();
