@@ -44,10 +44,12 @@
     .main-container {
         display: flex;
         flex: 1;
-        padding: 20px;
-        justify-content: flex-start;
+        overflow: hidden;
         align-items: flex-start;
         background-color: #121212;
+    
+        /* ◄ CLAVE: Dejamos 15px arriba, abajo e izquierda, pero 0px a la derecha */
+        padding: 15px 0px 15px 15
     }
 
     /* --- EL CONTENEDOR PADRE CON ALTURA CONFIGURADA --- */
@@ -66,12 +68,15 @@
 
     /* --- PANEL DE SLIDERS --- */
     .controls-panel {
-        flex: 1;             /* ◄ CLAVE: En lugar de un ancho fijo de 240px, ahora se estira para usar todo el espacio */
+        flex: 1;
         padding: 10px;
         display: flex;
         flex-direction: column;
         gap: 6px;
         background-color: #181818;
+        border: 1px solid #333;
+        /* ◄ Mantiene bordes redondeados a la izquierda, pero los de la derecha quedan rectos */
+        border-radius: 8px 0 0 8px; 
         box-sizing: border-box;
         height: 100%;
     }
@@ -129,9 +134,17 @@
         justify-content: flex-start;
         align-items: center;
         background-color: #121212;
-        border-left: 1px solid #333;
+    
+        /* ◄ Cambiamos el borde gris a 1px para que colinde limpiamente con el panel */
+        border: 1px solid #333;
+        border-left: none; /* Elimina el doble borde en la unión */
+    
+        /* ◄ Redondeado solo en las esquinas derechas para cerrar la tarjeta */
+        border-radius: 0 8px 8px 0; 
         box-sizing: border-box;
         height: 100%;
+        padding: 0;        /* ◄ Forzamos a que no exista margen interno que separe la foto */
+        margin: 0;         /* ◄ Asegura distancia cero */
     }
 
     .viewer-panel img {
