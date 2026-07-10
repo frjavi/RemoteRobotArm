@@ -5,134 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Brazo Robot</title>
     <link rel="manifest" href="manifest.json">
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #121212;
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-    }
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: #1e1e1e;
-        border-bottom: 1px solid #333;
-    }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
 
-    .btn-ble {
-        background-color: #007acc;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 5px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
+        .btn-ble {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
 
-    .btn-ble.connected {
-        background-color: #28a745;
-    }
+        .btn-ble.connected {
+            background-color: #28a745;
+        }
 
-    /* --- EL CONTENEDOR PADRE QUE PROPUSTISTE --- */
-    .main-container {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start; /* ◄ Mantiene a los paneles al ras superior */
-        padding: 15px;
-        gap: 0;
-        height: auto;            /* Se autoajusta al contenido real */
-    }
+        /* --- 1. EL ÁREA GENERAL DE LA PÁGINA --- */
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            justify-content: flex-start;
+            align-items: flex-start; /* Todo alineado arriba */
+            background-color: #121212;
+        }
 
-    /* --- PANEL DE CONTROLES (EL MOLDE) --- */
-    .controls-panel {
-        width: 230px;
-        min-width: 230px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        background-color: #181818;
-        border: 1px solid #333;
-        border-radius: 8px 0 0 8px; /* Redondeado izquierdo */
-        box-sizing: border-box;
-        z-index: 2;                 /* Asegura prioridad de renderizado */
-    }
+        /* --- 2. EL PANEL PADRE REAL QUE PROPUSISTE (LA TARJETA CONTENEDORA) --- */
+        .tarjeta-control {
+            display: inline-flex;    /* ◄ CLAVE: Mide estrictamente el ancho de lo que tenga dentro */
+            flex-direction: row;
+            align-items: stretch;    /* ◄ Fuerza a que el visor y los sliders midan exactamente lo mismo de alto */
+            background-color: #181818;
+            border: 2px solid #444;  /* Borde visible para que veas el contenedor real */
+            border-radius: 12px;
+            overflow: hidden;        /* No deja que nada se salga del borde redondeado */
+            height: fit-content;     /* ◄ Su altura depende exclusivamente del bloque de sliders */
+        }
 
-    .speed-panel {
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-bottom: 5px;
-    }
+        /* --- 3. EL PANEL DE SLIDERS (EL MOLDE DE LA ALTURA) --- */
+        .controls-panel {
+            width: 240px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: #181818;
+            box-sizing: border-box;
+        }
 
-    .control-group {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: #222;
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid #333;
-        height: 34px;               /* ◄ Altura fija por fila para calibrar tus líneas */
-        box-sizing: border-box;
-    }
+        .speed-panel {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
 
-    .label-name {
-        width: 75px;
-        font-weight: bold;
-        font-size: 0.8rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #222;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            height: 36px;            /* Altura fija por fila para tus líneas indicadoras */
+            box-sizing: border-box;
+        }
 
-    .slider {
-        flex: 1;
-        min-width: 0;
-        accent-color: #007acc;
-        cursor: pointer;
-    }
+        .label-name {
+            width: 75px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .angle-box {
-        width: 45px;
-        background-color: #000;
-        border: 1px solid #444;
-        border-radius: 4px;
-        text-align: center;
-        padding: 2px 0;
-        font-family: monospace;
-        font-size: 0.8rem;
-        color: #00ffcc;
-    }
+        .slider {
+            flex: 1;
+            min-width: 0;
+            accent-color: #007acc;
+            cursor: pointer;
+        }
 
-    /* --- PANEL DE LA IMAGEN QUE COPIA EL MOLDE --- */
-    .viewer-panel {
-        align-self: stretch;        /* ◄ ¡COPIA LA ALTURA! Mide exactamente los mismos píxeles de alto que .controls-panel */
-        display: flex;
-        justify-content: flex-start;
-        align-items: stretch;
-        background-color: #121212;
-        border: 1px solid #333;
-        border-left: none;          /* Se fusiona milimétricamente con los sliders */
-        border-radius: 0 8px 8px 0;
-        overflow: hidden;
-        box-sizing: border-box;
-    }
+        .angle-box {
+            width: 45px;
+            background-color: #000;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-align: center;
+            padding: 2px 0;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #00ffcc;
+        }
 
-    .viewer-panel img {
-        height: 100%;               /* Copia el 100% de la altura del panel */
-        width: 320px;               /* ◄ ¡ANCHO FIJO CONTROLADO! Ajusta este número (ej. 300px, 350px, 400px) para que coincida con el ancho de tu dibujo */
-        object-fit: fill;           /* Fuerza a estirar el dibujo exactamente al alto de las filas */
-        display: block;
-    }
-</style>
+        /* --- 4. EL PANEL DE LA IMAGEN (SE ADAPTA AL PADRE) --- */
+        .viewer-panel {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: #121212;
+            border-left: 1px solid #333;
+            box-sizing: border-box;
+        }
+
+        .viewer-panel img {
+            height: 100%;            /* ◄ Mide el 100% de la altura de la tarjeta (dictada por los sliders) */
+            width: 320px;            /* ◄ ANCHO FIJO CONTROLADO: Modifica este valor (ej. 350px, 400px) según tu dibujo */
+            object-fit: fill;        /* Estira o encoge verticalmente el dibujo de forma exacta */
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
@@ -142,29 +146,31 @@
     </header>
 
     <div class="main-container">
-        <div class="controls-panel">
+        
+        <div class="tarjeta-control">
             
-            <div class="speed-panel">
-                <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
-                    <span class="label-name" style="color: #ff9900;">Velocidad</span>
-                    <input type="range" min="1" max="45" value="10" class="slider" id="speedSlider" style="accent-color: #ff9900;">
-                    <span class="angle-box" id="speedBox" style="color: #ff9900;">10°/s</span>
+            <div class="controls-panel">
+                <div class="speed-panel">
+                    <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
+                        <span class="label-name" style="color: #ff9900;">Velocidad</span>
+                        <input type="range" min="1" max="45" value="10" class="slider" id="speedSlider" style="accent-color: #ff9900;">
+                        <span class="angle-box" id="speedBox" style="color: #ff9900;">10°/s</span>
+                    </div>
                 </div>
+
+                <div class="control-group"><span class="label-name">Pinza</span><input type="range" min="0" max="180" value="90" class="slider" id="pinza"><span class="angle-box" id="pinzaBox">90°</span></div>
+                <div class="control-group"><span class="label-name">M. Giro</span><input type="range" min="0" max="270" value="135" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">135°</span></div>
+                <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="270" value="135" class="slider" id="muneca"><span class="angle-box" id="munecaBox">135°</span></div>
+                <div class="control-group"><span class="label-name">Codo</span><input type="range" min="0" max="270" value="135" class="slider" id="codo"><span class="angle-box" id="codoBox">135°</span></div>
+                <div class="control-group"><span class="label-name">Hombro</span><input type="range" min="0" max="270" value="135" class="slider" id="hombro"><span class="angle-box" id="hombroBox">135°</span></div>
+                <div class="control-group"><span class="label-name">Base</span><input type="range" min="0" max="270" value="135" class="slider" id="rotacion"><span class="angle-box" id="rotacionBox">135°</span></div>
             </div>
 
-            <div class="control-group"><span class="label-name">Pinza</span><input type="range" min="0" max="180" value="90" class="slider" id="pinza"><span class="angle-box" id="pinzaBox">90°</span></div>
-            <div class="control-group"><span class="label-name">M. Giro</span><input type="range" min="0" max="270" value="135" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">135°</span></div>
-            <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="270" value="135" class="slider" id="muneca"><span class="angle-box" id="munecaBox">135°</span></div>
-            <div class="control-group"><span class="label-name">Codo</span><input type="range" min="0" max="270" value="135" class="slider" id="codo"><span class="angle-box" id="codoBox">135°</span></div>
-            <div class="control-group"><span class="label-name">Hombro</span><input type="range" min="0" max="270" value="135" class="slider" id="hombro"><span class="angle-box" id="hombroBox">135°</span></div>
-            <div class="control-group"><span class="label-name">Base</span><input type="range" min="0" max="270" value="135" class="slider" id="rotacion"><span class="angle-box" id="rotacionBox">135°</span></div>
+            <div class="viewer-panel">
+                <img src="RobotArmPic.png" alt="Brazo Robot">
+            </div>
 
-        </div>
-
-        <div class="viewer-panel">
-            <img src="RobotArmPic.png" alt="Brazo Robot">
-        </div>
-    </div>
+        </div> </div>
 
     <script>
         if ('serviceWorker' in navigator) {
