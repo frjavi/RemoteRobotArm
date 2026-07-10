@@ -58,22 +58,22 @@
         border: 2px solid #444;
         border-radius: 12px;
         overflow: hidden;
-        
-        /* ⚠️ CONFIGURACIÓN MILIMÉTRICA DE ALTURA ⚠️ */
         height: 275px !important;     /* ◄ Forzamos a que todo el bloque mida exactamente esto */
         max-height: 275px !important; /* Si tus líneas no cuadran, sube o baja este número (ej. 280px o 260px) */
+        width: 95%; 
+        max-width: 1200px;
     }
 
     /* --- PANEL DE SLIDERS --- */
     .controls-panel {
-        width: 240px;
+        flex: 1;             /* ◄ CLAVE: En lugar de un ancho fijo de 240px, ahora se estira para usar todo el espacio */
         padding: 10px;
         display: flex;
         flex-direction: column;
         gap: 6px;
         background-color: #181818;
         box-sizing: border-box;
-        height: 100%; /* Ocupa el alto de la tarjeta */
+        height: 100%;
     }
 
     .speed-panel {
@@ -85,26 +85,25 @@
     .control-group {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 12px;           /* Un poco más de separación interna entre elementos */
         background: #222;
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 4px 12px;
+        border-radius: 8px;
         border: 1px solid #333;
-        height: 32px; /* Altura controlada por fila */
+        height: 32px;
         box-sizing: border-box;
     }
 
     .label-name {
-        width: 75px;
+        width: 65px;         /* ◄ REDUCIDO: Ajustado al mínimo para que el texto no empuje al slider */
+        min-width: 65px;
         font-weight: bold;
         font-size: 0.8rem;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .slider {
-        flex: 1;
+        flex: 2;             /* ◄ CLAVE: Le da prioridad absoluta al slider para que sea el que más espacio gane */
         min-width: 0;
         accent-color: #007acc;
         cursor: pointer;
@@ -112,6 +111,7 @@
 
     .angle-box {
         width: 45px;
+        min-width: 45px;
         background-color: #000;
         border: 1px solid #444;
         border-radius: 4px;
@@ -126,17 +126,17 @@
     .viewer-panel {
         display: flex;
         justify-content: flex-start;
-        align-items: stretch;
+        align-items: center;
         background-color: #121212;
         border-left: 1px solid #333;
         box-sizing: border-box;
-        height: 100%; /* Copia los 275px estrictos de la tarjeta */
+        height: 100%;
     }
 
     .viewer-panel img {
-        height: 100% !important;     /* ◄ Forzado absoluto a medir los 275px */
-        width: auto;                 /* Ancho asignado para el gráfico */
-        object-fit: contain;             /* Estira el dibujo exactamente para calzar las líneas indicadoras */
+        height: 100% !important;
+        width: auto !important;
+        object-fit: contain;
         display: block;
     }
 </style>
