@@ -131,20 +131,17 @@
     /* --- VISOR DERECHO TOTALMENTE FRENADO --- */
     .viewer-panel {
         display: flex;
-        justify-content: flex-start;
+        justify-content: flex-start; /* ◄ Asegura que el contenido empiece a la izquierda */
         align-items: center;
         background-color: #121212;
-    
-        /* ◄ Cambiamos el borde gris a 1px para que colinde limpiamente con el panel */
         border: 1px solid #333;
-        border-left: none; /* Elimina el doble borde en la unión */
-    
-        /* ◄ Redondeado solo en las esquinas derechas para cerrar la tarjeta */
+        border-left: none; 
         border-radius: 0 8px 8px 0; 
         box-sizing: border-box;
         height: 100%;
-        padding: 0;        /* ◄ Forzamos a que no exista margen interno que separe la foto */
-        margin: 0;         /* ◄ Asegura distancia cero */
+        padding: 0 !important;      /* ◄ Elimina cualquier padding residual */
+        margin: 0 !important;       /* ◄ Elimina cualquier margen residual */
+        overflow: hidden;
     }
 
     .viewer-panel img {
@@ -152,6 +149,10 @@
         width: auto !important;
         object-fit: contain;
         display: block;
+    
+        /* ⚠️ LAS DOS LÍNEAS CLAVE PARA ELIMINAR EL AIRE ⚠️ */
+        margin-left: 0 !important;   /* ◄ Fuerza a la imagen a pegarse al borde izquierdo del bloque */
+        margin-right: auto;          /* Empuja el espacio vacío sobrante hacia la derecha de la pantalla */
     }
 </style>
 </head>
