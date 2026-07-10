@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Brazo Robot</title>
     <link rel="manifest" href="manifest.json">
-    <style>
+<style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         margin: 0;
@@ -41,30 +41,29 @@
         background-color: #28a745;
     }
 
-    /* --- CONTENEDOR PRINCIPAL RESTRINGIDO --- */
+    /* --- EL CONTENEDOR PADRE QUE PROPUSTISTE --- */
     .main-container {
         display: flex;
         flex-direction: row;
-        align-items: stretch; /* Obilga a los dos paneles a tener EXACTAMENTE la misma altura */
+        align-items: flex-start; /* ◄ Mantiene a los paneles al ras superior */
         padding: 15px;
         gap: 0;
-        /* Clave: El contenedor mide solo lo que ocupan los sliders */
-        height: fit-content;
-        max-height: fit-content;
+        height: auto;            /* Se autoajusta al contenido real */
     }
 
-    /* --- PANEL DE CONTROLES --- */
+    /* --- PANEL DE CONTROLES (EL MOLDE) --- */
     .controls-panel {
         width: 230px;
-        min-width: 210px;
+        min-width: 230px;
         padding: 10px;
         display: flex;
         flex-direction: column;
         gap: 8px;
         background-color: #181818;
         border: 1px solid #333;
-        border-radius: 8px 0 0 8px; /* Redondeado solo a la izquierda */
+        border-radius: 8px 0 0 8px; /* Redondeado izquierdo */
         box-sizing: border-box;
+        z-index: 2;                 /* Asegura prioridad de renderizado */
     }
 
     .speed-panel {
@@ -81,6 +80,8 @@
         padding: 6px 8px;
         border-radius: 8px;
         border: 1px solid #333;
+        height: 34px;               /* ◄ Altura fija por fila para calibrar tus líneas */
+        box-sizing: border-box;
     }
 
     .label-name {
@@ -111,25 +112,24 @@
         color: #00ffcc;
     }
 
-    /* --- VISOR DERECHO BLOQUEADO A LA ALTURA DE LOS CONTROLES --- */
+    /* --- PANEL DE LA IMAGEN QUE COPIA EL MOLDE --- */
     .viewer-panel {
+        align-self: stretch;        /* ◄ ¡COPIA LA ALTURA! Mide exactamente los mismos píxeles de alto que .controls-panel */
         display: flex;
         justify-content: flex-start;
-        align-items: center;
+        align-items: stretch;
         background-color: #121212;
         border: 1px solid #333;
-        border-left: none; /* Se fusiona con el borde del panel de controles */
+        border-left: none;          /* Se fusiona milimétricamente con los sliders */
         border-radius: 0 8px 8px 0;
         overflow: hidden;
         box-sizing: border-box;
     }
 
     .viewer-panel img {
-        /* Fuerza a la imagen a medir exactamente la altura que dicte el panel izquierdo */
-        height: 100% !important;
-        max-height: 100% !important;
-        width: auto;
-        object-fit: fill; /* Estira la imagen en vertical para calzar perfectamente las líneas */
+        height: 100%;               /* Copia el 100% de la altura del panel */
+        width: 320px;               /* ◄ ¡ANCHO FIJO CONTROLADO! Ajusta este número (ej. 300px, 350px, 400px) para que coincida con el ancho de tu dibujo */
+        object-fit: fill;           /* Fuerza a estirar el dibujo exactamente al alto de las filas */
         display: block;
     }
 </style>
