@@ -6,124 +6,133 @@
     <title>Control de Brazo Robot</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background-color: #1e1e1e;
-            border-bottom: 1px solid #333;
-        }
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #1e1e1e;
+        border-bottom: 1px solid #333;
+    }
 
-        .btn-ble {
-            background-color: #007acc;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+    .btn-ble {
+        background-color: #007acc;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
 
-        .btn-ble.connected {
-            background-color: #28a745;
-        }
+    .btn-ble.connected {
+        background-color: #28a745;
+    }
 
-        /* --- CONTENEDOR PRINCIPAL --- */
-        .main-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            align-items: flex-start;  /* ◄ Evita que los paneles se estiren al infinito hacia abajo */
-            padding: 15px;
-        }
+    /* --- CONTENEDOR PRINCIPAL RESTRINGIDO --- */
+    .main-container {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch; /* Obilga a los dos paneles a tener EXACTAMENTE la misma altura */
+        padding: 15px;
+        gap: 0;
+        /* Clave: El contenedor mide solo lo que ocupan los sliders */
+        height: fit-content;
+        max-height: fit-content;
+    }
 
-        /* --- PANEL IZQUIERDO ULTRA COMPACTO --- */
-        .controls-panel {
-            width: 230px;
-            min-width: 210px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background-color: #181818;
-            border: 1px solid #333;
-            border-radius: 8px;
-        }
+    /* --- PANEL DE CONTROLES --- */
+    .controls-panel {
+        width: 230px;
+        min-width: 210px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #181818;
+        border: 1px solid #333;
+        border-radius: 8px 0 0 8px; /* Redondeado solo a la izquierda */
+        box-sizing: border-box;
+    }
 
-        .speed-panel {
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 5px;
-        }
+    .speed-panel {
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+        margin-bottom: 5px;
+    }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: #222;
-            padding: 6px 8px;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #222;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
 
-        .label-name {
-            width: 75px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .label-name {
+        width: 75px;
+        font-weight: bold;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-        .slider {
-            flex: 1;
-            min-width: 0; /* Permite que la barra azul se encoja correctamente */
-            accent-color: #007acc;
-            cursor: pointer;
-        }
+    .slider {
+        flex: 1;
+        min-width: 0;
+        accent-color: #007acc;
+        cursor: pointer;
+    }
 
-        .angle-box {
-            width: 45px;
-            background-color: #000;
-            border: 1px solid #444;
-            border-radius: 4px;
-            text-align: center;
-            padding: 2px 0;
-            font-family: monospace;
-            font-size: 0.8rem;
-            color: #00ffcc;
-        }
+    .angle-box {
+        width: 45px;
+        background-color: #000;
+        border: 1px solid #444;
+        border-radius: 4px;
+        text-align: center;
+        padding: 2px 0;
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #00ffcc;
+    }
 
-        /* --- VISOR DERECHO ACOPLADO EN ALTURA --- */
-        .viewer-panel {
-            align-self: stretch;      /* ◄ Se estira verticalmente calcando el alto de .controls-panel */
-            display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
-            background-color: #121212;
-            padding: 0;
-            overflow: hidden;
-        }
+    /* --- VISOR DERECHO BLOQUEADO A LA ALTURA DE LOS CONTROLES --- */
+    .viewer-panel {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        background-color: #121212;
+        border: 1px solid #333;
+        border-left: none; /* Se fusiona con el borde del panel de controles */
+        border-radius: 0 8px 8px 0;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
 
-        .viewer-panel img {
-            height: 100%;             /* ◄ Mide exactamente el mismo alto que el panel de sliders */
-            width: auto;
-            object-fit: fill;         /* Estira la imagen en vertical para mantener el alineado de las líneas */
-        }
-    </style>
+    .viewer-panel img {
+        /* Fuerza a la imagen a medir exactamente la altura que dicte el panel izquierdo */
+        height: 100% !important;
+        max-height: 100% !important;
+        width: auto;
+        object-fit: fill; /* Estira la imagen en vertical para calzar perfectamente las líneas */
+        display: block;
+    }
+</style>
 </head>
 <body>
 
