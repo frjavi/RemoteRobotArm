@@ -54,16 +54,19 @@
 
     /* --- EL CONTENEDOR PADRE CON ALTURA CONFIGURADA --- */
     .tarjeta-control {
-        display: flex;
+        display: inline-flex;         /* ◄ CLAVE: Hace que la tarjeta mida EXACTAMENTE lo que sumen los controles y la imagen */
         flex-direction: row;
         background-color: #181818;
         border: 2px solid #444;
         border-radius: 12px;
         overflow: hidden;
-        height: 275px !important;     /* ◄ Forzamos a que todo el bloque mida exactamente esto */
-        max-height: 275px !important; /* Si tus líneas no cuadran, sube o baja este número (ej. 280px o 260px) */
-        width: 95%; 
-        max-width: 1200px;
+    
+        height: 275px !important;     /* Mantiene tu altura perfectamente clavada */
+        max-height: 275px !important; 
+    
+        /* ⚠️ ELIMINAMOS EL WIDTH: 95% QUE LO ESTIRABA DE MÁS ⚠️ */
+        width: auto;                  /* Deja que el contenido defina el ancho natural */
+        max-width: 100%;              /* Evita que se salga en pantallas muy pequeñas */
     }
 
     /* --- PANEL DE SLIDERS --- */
