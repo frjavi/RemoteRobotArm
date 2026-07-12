@@ -48,7 +48,7 @@
             overflow-y: auto;
             align-items: flex-start;
             background-color: #121212;
-            padding: 15px 15px 15px 15px;
+            padding: 15px;
             gap: 15px;
         }
 
@@ -154,7 +154,7 @@
             margin-right: auto;
         }
 
-        /* --- ESTILOS PANEL MEMO / RECORDER --- */
+        /* --- ESTILOS PANEL MEMO / EDITABLE --- */
         .memo-panel {
             width: 100%;
             max-width: 650px;
@@ -200,21 +200,42 @@
             display: none;
         }
 
-        textarea.memo-box {
+        /* DIV EDITABLE */
+        .memo-box {
             width: 100%;
-            height: 140px;
+            height: 150px;
             background-color: #0d0d0d;
-            color: #00ffcc;
             border: 1px solid #333;
             border-radius: 6px;
             padding: 8px;
             font-family: monospace;
             font-size: 0.85rem;
             box-sizing: border-box;
-            resize: vertical;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            outline: none;
+            color: #00ffcc;
         }
 
-        /* --- MODAL CONFIRMACIÓN BORRADO --- */
+        /* Clases para sintaxis de comandos */
+        .cmd-line {
+            display: block;
+            margin: 0;
+            padding: 1px 0;
+        }
+
+        .cmd-valid {
+            color: #00ffcc;
+        }
+
+        .cmd-invalid {
+            color: #ff4d4d !important;
+            background-color: rgba(255, 77, 77, 0.15);
+            text-decoration: underline wavy #ff4d4d;
+            border-radius: 2px;
+        }
+
+        /* MODAL CONFIRMACIÓN BORRADO */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -255,7 +276,6 @@
     <div class="main-container">
         
         <div class="tarjeta-control">
-            
             <div class="controls-panel">
                 <div class="speed-panel">
                     <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
@@ -276,10 +296,9 @@
             <div class="viewer-panel">
                 <img src="RobotArmPic.png" alt="Brazo Robot">
             </div>
-
         </div>
 
-        <!-- PANEL DE MEMO / GRABADOR DE MOVIMIENTOS -->
+        <!-- PANEL DE MEMO / EDITABLE CON RESALTADO -->
         <div class="memo-panel">
             <div class="memo-controls">
                 <button class="btn-memo btn-play" onclick="playMemo()">▶️ Reproducir</button>
@@ -290,12 +309,13 @@
                     <input type="file" id="fileInput" accept=".txt" onchange="cargarArchivo(event)">
                 </label>
             </div>
-            <textarea id="memoBox" class="memo-box" placeholder="Los comandos enviados con sus deltas de tiempo (ms) se registrarán aquí automáticamente..."></textarea>
+            <!-- Div Editable -->
+            <div id="memoBox" class="memo-box" contenteditable="true" spellcheck="false"></div>
         </div>
 
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN AL BORRAR -->
+    <!-- MODAL DE CONFIRMACIÓN -->
     <div id="modalConfirm" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0;">⚠️ Confirmación</h3>
@@ -317,8 +337,12 @@
         const connectBtn = document.getElementById('connectBle');
         const speedSlider = document.getElementById('speedSlider');
         const speedBox = document.getElementById('speedBox');
+        const memoBox = document.getElementById('memoBox');
 
         let tiempoUltimoComando = 0;
+
+        // Expresión Regular para validar líneas: Ej "1500,pinza:90,v:10"
+        const regexComandoValido = /^\d+,\w+:\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
             speedBox.innerText = speedSlider.value + '°/s';
@@ -379,57 +403,122 @@
                     .catch(err => console.log("Error al transmitir por BLE:", err));
             }
 
-            // Registrar en Memo con delta de tiempo
             registrarEnMemo(tramaSinSalto);
         }
 
         // --- REGISTRO AUTOMÁTICO EN EL MEMO ---
         function registrarEnMemo(comando) {
             const ahora = Date.now();
-            const memo = document.getElementById('memoBox');
+            const textoActual = memoBox.innerText.trim();
 
             let delayRelativo = 0;
-            if (memo.value.trim() !== "" && tiempoUltimoComando > 0) {
+            if (textoActual !== "" && tiempoUltimoComando > 0) {
                 delayRelativo = ahora - tiempoUltimoComando;
             }
 
             tiempoUltimoComando = ahora;
-            memo.value += `${delayRelativo},${comando}\n`;
-            memo.scrollTop = memo.scrollHeight;
+
+            const lineaTexto = `${delayRelativo},${comando}`;
+            
+            const divLinea = document.createElement('div');
+            divLinea.className = 'cmd-line cmd-valid';
+            divLinea.innerText = lineaTexto;
+
+            memoBox.appendChild(divLinea);
+            memoBox.scrollTop = memoBox.scrollHeight;
+        }
+
+        // --- VALIDACIÓN AL DAR SALTO DE LÍNEA (ENTER) ---
+        memoBox.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                setTimeout(() => {
+                    reparsearLineas();
+                }, 10);
+            }
+        });
+
+        // --- DETECCIÓN DE PEGAR DESDE EL PORTAPAPELES (PASTE) ---
+        memoBox.addEventListener('paste', (e) => {
+            e.preventDefault(); // Evita que se pegue HTML estructurado o con estilos extraños
+            
+            // Obtener únicamente texto plano del portapapeles
+            const textoPegado = (e.clipboardData || window.clipboardData).getData('text/plain');
+            
+            // Insertar el texto plano en la posición del cursor
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            selection.deleteFromDocument();
+            selection.getRangeAt(0).insertNode(document.createTextNode(textoPegado));
+            
+            // Mover el cursor al final del texto pegado
+            selection.collapseToEnd();
+
+            // Re-parsear y pintar líneas inmediatamente tras el pegado
+            reparsearLineas();
+        });
+
+        memoBox.addEventListener('blur', () => {
+            reparsearLineas();
+        });
+
+        function reparsearLineas() {
+            const textoCompleto = memoBox.innerText;
+            const lineas = textoCompleto.split('\n');
+            
+            memoBox.innerHTML = ''; 
+
+            lineas.forEach(lineaStr => {
+                const limpia = lineaStr.trim();
+                if (!limpia) return;
+
+                const divLinea = document.createElement('div');
+                divLinea.className = 'cmd-line';
+
+                if (regexComandoValido.test(limpia)) {
+                    divLinea.classList.add('cmd-valid');
+                } else {
+                    divLinea.classList.add('cmd-invalid');
+                }
+
+                divLinea.innerText = limpia;
+                memoBox.appendChild(divLinea);
+            });
         }
 
         // --- REPRODUCIR MEMO ---
         async function playMemo() {
-            const memo = document.getElementById('memoBox');
-            const texto = memo.value.trim();
-            if (!texto) return;
+            reparsearLineas(); 
+            const lineasDivs = memoBox.querySelectorAll('.cmd-line');
 
-            const lineas = texto.split('\n');
-            console.log("--- Reproduciendo secuencia ---");
+            if (lineasDivs.length === 0) return;
 
-            for (let i = 0; i < lineas.length; i++) {
-                const linea = lineas[i].trim();
-                if (!linea) continue;
+            console.log("--- Reproduciendo secuencia válida ---");
 
+            for (let i = 0; i < lineasDivs.length; i++) {
+                const elemento = lineasDivs[i];
+
+                if (elemento.classList.contains('cmd-invalid')) {
+                    console.warn("Ignorando línea con error de sintaxis:", elemento.innerText);
+                    continue; 
+                }
+
+                const linea = elemento.innerText.trim();
                 const partes = linea.split(',');
                 if (partes.length < 2) continue;
 
                 const delayRelativo = parseInt(partes[0]);
-                // Reconstruir el comando en caso de que contenga comas adicionales
                 const comando = partes.slice(1).join(','); 
 
                 if (delayRelativo > 0) {
                     await new Promise(resolve => setTimeout(resolve, delayRelativo));
                 }
 
-                // Transmitir por BLE
                 if (txCharacteristic) {
                     const encoder = new TextEncoder();
                     txCharacteristic.writeValue(encoder.encode(comando + '\n'))
                         .catch(err => console.log("Error en Play por BLE:", err));
                 }
 
-                // Actualizar sliders visualmente si el comando coincide con alguna articulación
                 actualizarInterfazPorComando(comando);
             }
 
@@ -437,7 +526,6 @@
         }
 
         function actualizarInterfazPorComando(comando) {
-            // Ejemplo de comando: pinza:90,v:10
             const partes = comando.split(',');
             if (partes.length > 0) {
                 const parArticulacion = partes[0].split(':');
@@ -455,10 +543,9 @@
             }
         }
 
-        // --- MANEJO DE ARCHIVOS Y LIMPIEZA ---
+        // --- ARCHIVOS Y LIMPIEZA ---
         function solicitarLimpieza() {
-            const texto = document.getElementById('memoBox').value.trim();
-            if (!texto) {
+            if (!memoBox.innerText.trim()) {
                 limpiarDirecto();
                 return;
             }
@@ -477,12 +564,12 @@
         }
 
         function limpiarDirecto() {
-            document.getElementById('memoBox').value = "";
+            memoBox.innerHTML = "";
             tiempoUltimoComando = 0;
         }
 
         function guardarArchivo() {
-            const texto = document.getElementById('memoBox').value;
+            const texto = memoBox.innerText;
             if (!texto.trim()) {
                 alert("El Memo está vacío, no hay nada que guardar.");
                 return;
@@ -502,7 +589,8 @@
 
             const lector = new FileReader();
             lector.onload = function(e) {
-                document.getElementById('memoBox').value = e.target.result;
+                memoBox.innerText = e.target.result;
+                reparsearLineas(); 
                 tiempoUltimoComando = 0;
             };
             lector.readAsText(archivo);
