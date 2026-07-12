@@ -341,8 +341,8 @@
 
         let tiempoUltimoComando = 0;
 
-        // Expresión Regular para validar líneas: Ej "1500,pinza:90,v:10"
-        const regexComandoValido = /^\d+,\w+:\d+,v:\d+$/;
+        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con los dos puntos
+        const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
             speedBox.innerText = speedSlider.value + '°/s';
@@ -439,21 +439,16 @@
 
         // --- DETECCIÓN DE PEGAR DESDE EL PORTAPAPELES (PASTE) ---
         memoBox.addEventListener('paste', (e) => {
-            e.preventDefault(); // Evita que se pegue HTML estructurado o con estilos extraños
+            e.preventDefault();
             
-            // Obtener únicamente texto plano del portapapeles
             const textoPegado = (e.clipboardData || window.clipboardData).getData('text/plain');
             
-            // Insertar el texto plano en la posición del cursor
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
             selection.deleteFromDocument();
             selection.getRangeAt(0).insertNode(document.createTextNode(textoPegado));
             
-            // Mover el cursor al final del texto pegado
             selection.collapseToEnd();
-
-            // Re-parsear y pintar líneas inmediatamente tras el pegado
             reparsearLineas();
         });
 
@@ -462,7 +457,8 @@
         });
 
         function reparsearLineas() {
-            const textoCompleto = memoBox.innerText;
+            // Reemplaza espacios de no separación HTML por espacios normales
+            const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
             
             memoBox.innerHTML = ''; 
@@ -474,6 +470,7 @@
                 const divLinea = document.createElement('div');
                 divLinea.className = 'cmd-line';
 
+                // Evalúa estrictamente contra las 6 articulaciones válidas
                 if (regexComandoValido.test(limpia)) {
                     divLinea.classList.add('cmd-valid');
                 } else {
