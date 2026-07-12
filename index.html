@@ -191,6 +191,22 @@
         .btn-clear { background-color: #dc3545; color: white; }
         .btn-file { background-color: #007acc; color: white; }
 
+        /* --- INDICADOR DE TIEMPO / PLAYBACK --- */
+        .timer-badge {
+            margin-left: auto;
+            background-color: #000;
+            border: 1px solid #ff9900;
+            color: #ff9900;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: none; /* Oculto por defecto */
+            align-items: center;
+            gap: 6px;
+        }
+
         .file-label {
             display: inline-block;
             cursor: pointer;
@@ -279,7 +295,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robót 1.0</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robót 1.1</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -318,6 +334,11 @@
                     📂 Cargar .txt
                     <input type="file" id="fileInput" accept=".txt" onchange="cargarArchivo(event)">
                 </label>
+
+                <!-- INSIGNIA DEL TEMPORIZADOR -->
+                <div id="timerBadge" class="timer-badge">
+                    ⏳ <span id="timerText">0.0s</span>
+                </div>
             </div>
             <!-- Div Editable -->
             <div id="memoBox" class="memo-box" contenteditable="true" spellcheck="false"></div>
@@ -349,6 +370,8 @@
         const speedBox = document.getElementById('speedBox');
         const memoBox = document.getElementById('memoBox');
         const btnPlay = document.getElementById('btnPlay');
+        const timerBadge = document.getElementById('timerBadge');
+        const timerText = document.getElementById('timerText');
 
         let tiempoUltimoComando = 0;
 
@@ -508,7 +531,7 @@
             reparsearLineas();
         });
 
-        // --- ELIMINA LÍNEAS VACÍAS (Solo deja líneas con texto real) ---
+        // --- PURGAR LÍNEAS VACÍAS ---
         function purgarLineasVacias() {
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
@@ -517,7 +540,7 @@
 
             lineas.forEach(lineaStr => {
                 const limpia = lineaStr.trim();
-                if (!limpia) return; // Se descarta cualquier línea vacía
+                if (!limpia) return;
 
                 const divLinea = document.createElement('div');
                 divLinea.className = 'cmd-line';
@@ -533,7 +556,7 @@
             });
         }
 
-        // --- REPARSIDEADO Y COLOREADO DE SINTAXIS (Mantiene líneas vacías para edición) ---
+        // --- REPARSIDEADO Y COLOREADO DE SINTAXIS ---
         function reparsearLineas() {
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
@@ -559,9 +582,31 @@
             });
         }
 
-        // --- REPRODUCIR MEMO (Purga líneas vacías -> Pausa previa -> Resaltado + Ejecución + 1s final) ---
+        // --- FUNCIÓN DE ESPERA CON CUENTA REGRESIVA VISUAL ---
+        function esperarConTimer(ms) {
+            return new Promise(resolve => {
+                if (ms <= 0) {
+                    resolve();
+                    return;
+                }
+
+                const inicio = Date.now();
+                const intervalo = setInterval(() => {
+                    const transcurrido = Date.now() - inicio;
+                    const restante = Math.max(0, ms - transcurrido);
+                    
+                    timerText.innerText = (restante / 1000).toFixed(1) + 's';
+
+                    if (restante <= 0) {
+                        clearInterval(intervalo);
+                        resolve();
+                    }
+                }, 50); // Actualiza cada 50ms para fluidez
+            });
+        }
+
+        // --- REPRODUCIR MEMO CON TIMER VISUAL ---
         async function playMemo() {
-            // 1. Elimina automáticamente cualquier línea vacía en blanco antes de ejecutar
             purgarLineasVacias(); 
 
             const lineasDivs = memoBox.querySelectorAll('.cmd-line');
@@ -569,13 +614,13 @@
 
             btnPlay.innerText = "⏳ Ejecutando...";
             btnPlay.disabled = true;
+            timerBadge.style.display = 'inline-flex'; // Mostramos la insignia
 
             console.log("--- Reproduciendo secuencia ---");
 
             for (let i = 0; i < lineasDivs.length; i++) {
                 const elemento = lineasDivs[i];
 
-                // Ignorar comandos con error de sintaxis en rojo
                 if (elemento.classList.contains('cmd-invalid')) {
                     continue; 
                 }
@@ -587,17 +632,19 @@
                 const delayRelativo = parseInt(partes[0]);
                 const comando = partes.slice(1).join(','); 
 
-                // 2. ESPERAR PRIMERO EL TIEMPO PREVIO DE ESTA LÍNEA
+                // 1. ESPERA VISUAL CON CUENTA REGRESIVA
                 if (delayRelativo > 0) {
-                    await new Promise(resolve => setTimeout(resolve, delayRelativo));
+                    await esperarConTimer(delayRelativo);
+                } else {
+                    timerText.innerText = "0.0s";
                 }
 
-                // 3. QUITAR RESALTADO ANTERIOR Y RESALTAR LA LÍNEA ACTUAL
+                // 2. CAMBIAR RESALTADO DE LÍNEA
                 lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
                 elemento.classList.add('cmd-executing');
                 elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                // 4. ENVIAR POR BLE Y ACTUALIZAR SLIDERS EN ESTE INSTANTE
+                // 3. ENVIAR POR BLE Y ACTUALIZAR SLIDERS
                 if (txCharacteristic) {
                     const encoder = new TextEncoder();
                     txCharacteristic.writeValue(encoder.encode(comando + '\n'))
@@ -607,11 +654,12 @@
                 actualizarInterfazPorComando(comando);
             }
 
-            // 5. PAUSA DE 1 SEGUNDO AL FINAL PARA LA ÚLTIMA LÍNEA RESALTADA
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // 4. PAUSA FINAL DE 1 SEGUNDO EN LA ÚLTIMA LÍNEA CON TIMER
+            await esperarConTimer(1000);
 
-            // Al finalizar toda la secuencia, apagamos el último resplandor y liberamos el botón
+            // Restablecer interfaz
             lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
+            timerBadge.style.display = 'none'; // Ocultamos la insignia
             btnPlay.innerText = "▶️ Reproducir";
             btnPlay.disabled = false;
 
@@ -662,7 +710,7 @@
         }
 
         function guardarArchivo() {
-            purgarLineasVacias(); // Limpia antes de guardar el archivo .txt
+            purgarLineasVacias(); 
             const texto = memoBox.innerText;
             if (!texto.trim()) {
                 alert("El Memo está vacío, no hay nada que guardar.");
