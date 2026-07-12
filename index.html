@@ -269,7 +269,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico 1.4</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.6</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -341,7 +341,7 @@
 
         let tiempoUltimoComando = 0;
 
-        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
+        // Expresión Regular estricta
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
@@ -428,15 +428,58 @@
             memoBox.scrollTop = memoBox.scrollHeight;
         }
 
-        // --- MANEJO DE ENTER: BROWSER NATIVO PRIMERO, LUEGO EVALÚA ---
+        // --- VALIDACIÓN EN ENTER: EVALÚA SOLO EL NODO ACTUAL Y CREA UNO NUEVO ---
         memoBox.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                // Dejamos que el navegador cree la nueva línea y baje el cursor
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        evaluarLineasSinMoverCursor();
-                    }, 0);
-                });
+                e.preventDefault(); // Controlamos la creación de líneas para no romper el cursor
+
+                const sel = window.getSelection();
+                if (!sel.rangeCount) return;
+
+                // 1. Obtener el contenedor o línea donde está el cursor actualmente
+                let nodoActual = sel.anchorNode;
+                while (nodoActual && nodoActual.parentNode !== memoBox && nodoActual !== memoBox) {
+                    nodoActual = nodoActual.parentNode;
+                }
+
+                // Si el texto está directamente en memoBox sin div, lo rodeamos
+                if (!nodoActual || nodoActual === memoBox) {
+                    const textoCompleto = memoBox.innerText.trim();
+                    memoBox.innerHTML = '';
+                    nodoActual = document.createElement('div');
+                    nodoActual.className = 'cmd-line';
+                    nodoActual.innerText = textoCompleto;
+                    memoBox.appendChild(nodoActual);
+                }
+
+                // 2. Validar el texto de la línea actual antes de bajar
+                const textoLinea = nodoActual.innerText.replace(/\u00a0/g, " ").trim();
+                if (textoLinea) {
+                    const esValido = regexComandoValido.test(textoLinea);
+                    nodoActual.className = 'cmd-line ' + (esValido ? 'cmd-valid' : 'cmd-invalid');
+                } else {
+                    nodoActual.className = 'cmd-line';
+                }
+
+                // 3. Crear la NUEVA línea vacía justo debajo y mover el cursor ahí
+                const nuevaLinea = document.createElement('div');
+                nuevaLinea.className = 'cmd-line';
+                nuevaLinea.innerHTML = '<br>'; // Mantiene el alto de la línea vacía
+
+                if (nodoActual.nextSibling) {
+                    memoBox.insertBefore(nuevaLinea, nodoActual.nextSibling);
+                } else {
+                    memoBox.appendChild(nuevaLinea);
+                }
+
+                // 4. Mover el cursor al inicio de la nueva línea
+                const rangeNuevo = document.createRange();
+                rangeNuevo.setStart(nuevaLinea, 0);
+                rangeNuevo.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(rangeNuevo);
+
+                memoBox.scrollTop = memoBox.scrollHeight;
             }
         });
 
@@ -455,48 +498,11 @@
             reparsearLineas();
         });
 
-        // --- VALIDACIÓN AL SALIR DEL ÁREA ---
         memoBox.addEventListener('blur', () => {
             reparsearLineas();
         });
 
-        // --- EVALÚA Y COLOREA LAS LÍNEAS RESPETANDO EL CURSOR EN LA NUEVA LÍNEA ---
-        function evaluarLineasSinMoverCursor() {
-            // Guardar posición del cursor actual (que ya está en la nueva línea)
-            const sel = window.getSelection();
-            if (!sel.rangeCount) return;
-            const range = sel.getRangeAt(0);
-
-            // Analizar el contenido por renglones
-            const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
-            const lineas = textoCompleto.split('\n');
-
-            // Recorrer los nodos existentes o reconstruir suavemente
-            let HTMLRes = '';
-            lineas.forEach((lineaStr, idx) => {
-                const limpia = lineaStr.trim();
-                if (!limpia && idx === lineas.length - 1) {
-                    // Es la nueva línea vacía creada por el Enter donde está el cursor
-                    HTMLRes += '<div class="cmd-line"><br></div>';
-                } else if (limpia) {
-                    const esValido = regexComandoValido.test(limpia);
-                    const clase = esValido ? 'cmd-valid' : 'cmd-invalid';
-                    HTMLRes += `<div class="cmd-line ${clase}">${limpia}</div>`;
-                }
-            });
-
-            // Solo actualizar si hubo cambios sintácticos para evitar parpadeos
-            memoBox.innerHTML = HTMLRes;
-
-            // Colocar el cursor de nuevo al final (en la línea vacía recién creada)
-            const rangeNuevo = document.createRange();
-            rangeNuevo.selectNodeContents(memoBox);
-            rangeNuevo.collapse(false); // Ir al final
-            sel.removeAllRanges();
-            sel.addRange(rangeNuevo);
-        }
-
-        // --- REPARSIDEADO COMPLETO (Sintaxis en verde/rojo para cargar o reproducir) ---
+        // --- REPARSIDEADO COMPLETO (Se usa en blur, paste, cargar archivo y Play) ---
         function reparsearLineas() {
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
@@ -505,18 +511,19 @@
 
             lineas.forEach(lineaStr => {
                 const limpia = lineaStr.trim();
-                if (!limpia) return;
-
                 const divLinea = document.createElement('div');
                 divLinea.className = 'cmd-line';
 
-                if (regexComandoValido.test(limpia)) {
+                if (!limpia) {
+                    divLinea.innerHTML = '<br>';
+                } else if (regexComandoValido.test(limpia)) {
                     divLinea.classList.add('cmd-valid');
+                    divLinea.innerText = limpia;
                 } else {
                     divLinea.classList.add('cmd-invalid');
+                    divLinea.innerText = limpia;
                 }
 
-                divLinea.innerText = limpia;
                 memoBox.appendChild(divLinea);
             });
         }
@@ -533,8 +540,7 @@
             for (let i = 0; i < lineasDivs.length; i++) {
                 const elemento = lineasDivs[i];
 
-                if (elemento.classList.contains('cmd-invalid')) {
-                    console.warn("Ignorando línea con error de sintaxis:", elemento.innerText);
+                if (elemento.classList.contains('cmd-invalid') || !elemento.innerText.trim()) {
                     continue; 
                 }
 
