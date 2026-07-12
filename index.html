@@ -269,7 +269,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Mando Brazo Robótico v1.1</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.2</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -340,6 +340,7 @@
         const memoBox = document.getElementById('memoBox');
 
         let tiempoUltimoComando = 0;
+        let debounceTimer = null;
 
         // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
@@ -428,13 +429,13 @@
             memoBox.scrollTop = memoBox.scrollHeight;
         }
 
-        // --- VALIDACIÓN AL DAR SALTO DE LÍNEA (ENTER) ---
-        memoBox.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                setTimeout(() => {
-                    reparsearLineas();
-                }, 10);
-            }
+        // --- ANALIZAR EN TIEMPO REAL SIN BLOQUEAR EL SALTO DE LÍNEA (ENTER) ---
+        memoBox.addEventListener('input', () => {
+            // Espera a que el usuario termine de escribir (300ms de pausa) para re-evaluar sintaxis y pintar
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                reparsearLineas();
+            }, 300);
         });
 
         // --- DETECCIÓN DE PEGAR DESDE EL PORTAPAPELES (PASTE) ---
@@ -507,7 +508,7 @@
             return resultado;
         }
 
-        // --- REPARSIDEADO CON CONTROL DE CURSOR ---
+        // --- REPARSEAR CON CONTROL DE CURSOR ---
         function reparsearLineas() {
             const posCursor = obtenerPosicionCursor(memoBox);
 
