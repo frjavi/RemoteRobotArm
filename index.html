@@ -279,7 +279,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.8</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.9</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -534,7 +534,7 @@
             });
         }
 
-        // --- REPRODUCIR MEMO (Pausa previa -> Resaltado + Ejecución) ---
+        // --- REPRODUCIR MEMO (Pausa previa -> Resaltado + Ejecución + 1s final) ---
         async function playMemo() {
             reparsearLineas(); 
             const lineasDivs = memoBox.querySelectorAll('.cmd-line');
@@ -580,6 +580,9 @@
 
                 actualizarInterfazPorComando(comando);
             }
+
+            // 4. PAUSA DE 1 SEGUNDO AL FINAL PARA LA ÚLTIMA LÍNEA RESALTADA
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Al finalizar toda la secuencia, apagamos el último resplandor y liberamos el botón
             lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
