@@ -279,7 +279,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.9</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robót 1.0</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -508,7 +508,32 @@
             reparsearLineas();
         });
 
-        // --- REPARSIDEADO Y COLOREADO DE SINTAXIS ---
+        // --- ELIMINA LÍNEAS VACÍAS (Solo deja líneas con texto real) ---
+        function purgarLineasVacias() {
+            const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
+            const lineas = textoCompleto.split('\n');
+            
+            memoBox.innerHTML = ''; 
+
+            lineas.forEach(lineaStr => {
+                const limpia = lineaStr.trim();
+                if (!limpia) return; // Se descarta cualquier línea vacía
+
+                const divLinea = document.createElement('div');
+                divLinea.className = 'cmd-line';
+
+                if (regexComandoValido.test(limpia)) {
+                    divLinea.classList.add('cmd-valid');
+                } else {
+                    divLinea.classList.add('cmd-invalid');
+                }
+
+                divLinea.innerText = limpia;
+                memoBox.appendChild(divLinea);
+            });
+        }
+
+        // --- REPARSIDEADO Y COLOREADO DE SINTAXIS (Mantiene líneas vacías para edición) ---
         function reparsearLineas() {
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
@@ -534,11 +559,12 @@
             });
         }
 
-        // --- REPRODUCIR MEMO (Pausa previa -> Resaltado + Ejecución + 1s final) ---
+        // --- REPRODUCIR MEMO (Purga líneas vacías -> Pausa previa -> Resaltado + Ejecución + 1s final) ---
         async function playMemo() {
-            reparsearLineas(); 
-            const lineasDivs = memoBox.querySelectorAll('.cmd-line');
+            // 1. Elimina automáticamente cualquier línea vacía en blanco antes de ejecutar
+            purgarLineasVacias(); 
 
+            const lineasDivs = memoBox.querySelectorAll('.cmd-line');
             if (lineasDivs.length === 0) return;
 
             btnPlay.innerText = "⏳ Ejecutando...";
@@ -549,8 +575,8 @@
             for (let i = 0; i < lineasDivs.length; i++) {
                 const elemento = lineasDivs[i];
 
-                // Ignorar líneas vacías o con error de sintaxis en rojo
-                if (elemento.classList.contains('cmd-invalid') || !elemento.innerText.trim()) {
+                // Ignorar comandos con error de sintaxis en rojo
+                if (elemento.classList.contains('cmd-invalid')) {
                     continue; 
                 }
 
@@ -561,17 +587,17 @@
                 const delayRelativo = parseInt(partes[0]);
                 const comando = partes.slice(1).join(','); 
 
-                // 1. ESPERAR PRIMERO EL TIEMPO PREVIO DE ESTA LÍNEA
+                // 2. ESPERAR PRIMERO EL TIEMPO PREVIO DE ESTA LÍNEA
                 if (delayRelativo > 0) {
                     await new Promise(resolve => setTimeout(resolve, delayRelativo));
                 }
 
-                // 2. QUITAR RESALTADO ANTERIOR Y RESALTAR LA LÍNEA ACTUAL
+                // 3. QUITAR RESALTADO ANTERIOR Y RESALTAR LA LÍNEA ACTUAL
                 lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
                 elemento.classList.add('cmd-executing');
                 elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                // 3. ENVIAR POR BLE Y ACTUALIZAR SLIDERS EN ESTE INSTANTE
+                // 4. ENVIAR POR BLE Y ACTUALIZAR SLIDERS EN ESTE INSTANTE
                 if (txCharacteristic) {
                     const encoder = new TextEncoder();
                     txCharacteristic.writeValue(encoder.encode(comando + '\n'))
@@ -581,7 +607,7 @@
                 actualizarInterfazPorComando(comando);
             }
 
-            // 4. PAUSA DE 1 SEGUNDO AL FINAL PARA LA ÚLTIMA LÍNEA RESALTADA
+            // 5. PAUSA DE 1 SEGUNDO AL FINAL PARA LA ÚLTIMA LÍNEA RESALTADA
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Al finalizar toda la secuencia, apagamos el último resplandor y liberamos el botón
@@ -636,6 +662,7 @@
         }
 
         function guardarArchivo() {
+            purgarLineasVacias(); // Limpia antes de guardar el archivo .txt
             const texto = memoBox.innerText;
             if (!texto.trim()) {
                 alert("El Memo está vacío, no hay nada que guardar.");
