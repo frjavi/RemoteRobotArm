@@ -279,7 +279,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.7</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.8</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -352,7 +352,7 @@
 
         let tiempoUltimoComando = 0;
 
-        // Expresión Regular estricta
+        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
@@ -534,33 +534,25 @@
             });
         }
 
-        // --- REPRODUCIR MEMO CON RESALTADO EN TIEMPO REAL ---
+        // --- REPRODUCIR MEMO (Pausa previa -> Resaltado + Ejecución) ---
         async function playMemo() {
             reparsearLineas(); 
             const lineasDivs = memoBox.querySelectorAll('.cmd-line');
 
             if (lineasDivs.length === 0) return;
 
-            // Cambiamos el texto del botón para indicar reproducción activa
             btnPlay.innerText = "⏳ Ejecutando...";
             btnPlay.disabled = true;
 
-            console.log("--- Reproduciendo secuencia con resaltado ---");
+            console.log("--- Reproduciendo secuencia ---");
 
             for (let i = 0; i < lineasDivs.length; i++) {
                 const elemento = lineasDivs[i];
 
-                // Limpiar cualquier resaltado de la iteración anterior
-                lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
-
-                // Ignorar líneas vacías o en rojo
+                // Ignorar líneas vacías o con error de sintaxis en rojo
                 if (elemento.classList.contains('cmd-invalid') || !elemento.innerText.trim()) {
                     continue; 
                 }
-
-                // 🌟 RESALTAR LA LÍNEA ACTUAL EN TIEMPO REAL 🌟
-                elemento.classList.add('cmd-executing');
-                elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
                 const linea = elemento.innerText.trim();
                 const partes = linea.split(',');
@@ -569,23 +561,27 @@
                 const delayRelativo = parseInt(partes[0]);
                 const comando = partes.slice(1).join(','); 
 
-                // Esperar el tiempo correspondiente
+                // 1. ESPERAR PRIMERO EL TIEMPO PREVIO DE ESTA LÍNEA
                 if (delayRelativo > 0) {
                     await new Promise(resolve => setTimeout(resolve, delayRelativo));
                 }
 
-                // Transmitir trama BLE
+                // 2. QUITAR RESALTADO ANTERIOR Y RESALTAR LA LÍNEA ACTUAL
+                lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
+                elemento.classList.add('cmd-executing');
+                elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // 3. ENVIAR POR BLE Y ACTUALIZAR SLIDERS EN ESTE INSTANTE
                 if (txCharacteristic) {
                     const encoder = new TextEncoder();
                     txCharacteristic.writeValue(encoder.encode(comando + '\n'))
                         .catch(err => console.log("Error en Play por BLE:", err));
                 }
 
-                // Mover slider e interfaz
                 actualizarInterfazPorComando(comando);
             }
 
-            // Al terminar la secuencia, limpiamos el resaltado y restauramos el botón
+            // Al finalizar toda la secuencia, apagamos el último resplandor y liberamos el botón
             lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
             btnPlay.innerText = "▶️ Reproducir";
             btnPlay.disabled = false;
