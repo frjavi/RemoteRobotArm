@@ -341,7 +341,7 @@
 
         let tiempoUltimoComando = 0;
 
-        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con los dos puntos
+        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
@@ -456,8 +456,61 @@
             reparsearLineas();
         });
 
+        // --- FUNCIONES PARA MANTENER LA POSICIÓN DEL CURSOR ---
+        function obtenerPosicionCursor(elemento) {
+            let posicion = 0;
+            const seleccion = window.getSelection();
+            if (seleccion.rangeCount > 0) {
+                const rango = seleccion.getRangeAt(0);
+                const clonRango = rango.cloneRange();
+                clonRango.selectNodeContents(elemento);
+                clonRango.setEnd(rango.endContainer, rango.endOffset);
+                posicion = clonRango.toString().length;
+            }
+            return posicion;
+        }
+
+        function restaurarPosicionCursor(elemento, posicion) {
+            const nodoTexto = obtenerNodoEnPosicion(elemento, posicion);
+            if (nodoTexto.nodo) {
+                const seleccion = window.getSelection();
+                const rango = document.createRange();
+                rango.setStart(nodoTexto.nodo, nodoTexto.offset);
+                rango.collapse(true);
+                seleccion.removeAllRanges();
+                seleccion.addRange(rango);
+            }
+        }
+
+        function obtenerNodoEnPosicion(elemento, posicion) {
+            let acumulado = 0;
+            let resultado = { nodo: null, offset: 0 };
+
+            function recorrer(nodo) {
+                if (nodo.nodeType === Node.TEXT_NODE) {
+                    const largo = nodo.textContent.length;
+                    if (acumulado + largo >= posicion) {
+                        resultado.nodo = nodo;
+                        resultado.offset = posicion - acumulado;
+                        return true;
+                    }
+                    acumulado += largo;
+                } else {
+                    for (let i = 0; i < nodo.childNodes.length; i++) {
+                        if (recorrer(nodo.childNodes[i])) return true;
+                    }
+                }
+                return false;
+            }
+
+            recorrer(elemento);
+            return resultado;
+        }
+
+        // --- REPARSIDEADO CON CONTROL DE CURSOR ---
         function reparsearLineas() {
-            // Reemplaza espacios de no separación HTML por espacios normales
+            const posCursor = obtenerPosicionCursor(memoBox);
+
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
             
@@ -470,7 +523,6 @@
                 const divLinea = document.createElement('div');
                 divLinea.className = 'cmd-line';
 
-                // Evalúa estrictamente contra las 6 articulaciones válidas
                 if (regexComandoValido.test(limpia)) {
                     divLinea.classList.add('cmd-valid');
                 } else {
@@ -480,6 +532,8 @@
                 divLinea.innerText = limpia;
                 memoBox.appendChild(divLinea);
             });
+
+            restaurarPosicionCursor(memoBox, posCursor);
         }
 
         // --- REPRODUCIR MEMO ---
