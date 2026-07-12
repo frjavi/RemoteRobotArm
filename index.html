@@ -269,7 +269,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico 1.3</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico 1.4</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -340,7 +340,6 @@
         const memoBox = document.getElementById('memoBox');
 
         let tiempoUltimoComando = 0;
-        let debounceTimer = null;
 
         // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
@@ -429,13 +428,16 @@
             memoBox.scrollTop = memoBox.scrollHeight;
         }
 
-        // --- ANALIZAR EN TIEMPO REAL SIN BLOQUEAR EL SALTO DE LÍNEA (ENTER) ---
-        memoBox.addEventListener('input', () => {
-            // Espera a que el usuario termine de escribir (300ms de pausa) para re-evaluar sintaxis y pintar
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                reparsearLineas();
-            }, 300);
+        // --- MANEJO DE ENTER: BROWSER NATIVO PRIMERO, LUEGO EVALÚA ---
+        memoBox.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                // Dejamos que el navegador cree la nueva línea y baje el cursor
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        evaluarLineasSinMoverCursor();
+                    }, 0);
+                });
+            }
         });
 
         // --- DETECCIÓN DE PEGAR DESDE EL PORTAPAPELES (PASTE) ---
@@ -453,65 +455,49 @@
             reparsearLineas();
         });
 
+        // --- VALIDACIÓN AL SALIR DEL ÁREA ---
         memoBox.addEventListener('blur', () => {
             reparsearLineas();
         });
 
-        // --- FUNCIONES PARA MANTENER LA POSICIÓN DEL CURSOR ---
-        function obtenerPosicionCursor(elemento) {
-            let posicion = 0;
-            const seleccion = window.getSelection();
-            if (seleccion.rangeCount > 0) {
-                const rango = seleccion.getRangeAt(0);
-                const clonRango = rango.cloneRange();
-                clonRango.selectNodeContents(elemento);
-                clonRango.setEnd(rango.endContainer, rango.endOffset);
-                posicion = clonRango.toString().length;
-            }
-            return posicion;
-        }
+        // --- EVALÚA Y COLOREA LAS LÍNEAS RESPETANDO EL CURSOR EN LA NUEVA LÍNEA ---
+        function evaluarLineasSinMoverCursor() {
+            // Guardar posición del cursor actual (que ya está en la nueva línea)
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
 
-        function restaurarPosicionCursor(elemento, posicion) {
-            const nodoTexto = obtenerNodoEnPosicion(elemento, posicion);
-            if (nodoTexto.nodo) {
-                const seleccion = window.getSelection();
-                const rango = document.createRange();
-                rango.setStart(nodoTexto.nodo, nodoTexto.offset);
-                rango.collapse(true);
-                seleccion.removeAllRanges();
-                seleccion.addRange(rango);
-            }
-        }
+            // Analizar el contenido por renglones
+            const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
+            const lineas = textoCompleto.split('\n');
 
-        function obtenerNodoEnPosicion(elemento, posicion) {
-            let acumulado = 0;
-            let resultado = { nodo: null, offset: 0 };
-
-            function recorrer(nodo) {
-                if (nodo.nodeType === Node.TEXT_NODE) {
-                    const largo = nodo.textContent.length;
-                    if (acumulado + largo >= posicion) {
-                        resultado.nodo = nodo;
-                        resultado.offset = posicion - acumulado;
-                        return true;
-                    }
-                    acumulado += largo;
-                } else {
-                    for (let i = 0; i < nodo.childNodes.length; i++) {
-                        if (recorrer(nodo.childNodes[i])) return true;
-                    }
+            // Recorrer los nodos existentes o reconstruir suavemente
+            let HTMLRes = '';
+            lineas.forEach((lineaStr, idx) => {
+                const limpia = lineaStr.trim();
+                if (!limpia && idx === lineas.length - 1) {
+                    // Es la nueva línea vacía creada por el Enter donde está el cursor
+                    HTMLRes += '<div class="cmd-line"><br></div>';
+                } else if (limpia) {
+                    const esValido = regexComandoValido.test(limpia);
+                    const clase = esValido ? 'cmd-valid' : 'cmd-invalid';
+                    HTMLRes += `<div class="cmd-line ${clase}">${limpia}</div>`;
                 }
-                return false;
-            }
+            });
 
-            recorrer(elemento);
-            return resultado;
+            // Solo actualizar si hubo cambios sintácticos para evitar parpadeos
+            memoBox.innerHTML = HTMLRes;
+
+            // Colocar el cursor de nuevo al final (en la línea vacía recién creada)
+            const rangeNuevo = document.createRange();
+            rangeNuevo.selectNodeContents(memoBox);
+            rangeNuevo.collapse(false); // Ir al final
+            sel.removeAllRanges();
+            sel.addRange(rangeNuevo);
         }
 
-        // --- REPARSEAR CON CONTROL DE CURSOR ---
+        // --- REPARSIDEADO COMPLETO (Sintaxis en verde/rojo para cargar o reproducir) ---
         function reparsearLineas() {
-            const posCursor = obtenerPosicionCursor(memoBox);
-
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
             
@@ -533,8 +519,6 @@
                 divLinea.innerText = limpia;
                 memoBox.appendChild(divLinea);
             });
-
-            restaurarPosicionCursor(memoBox, posCursor);
         }
 
         // --- REPRODUCIR MEMO ---
