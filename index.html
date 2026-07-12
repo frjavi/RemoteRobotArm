@@ -5,158 +5,245 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Brazo Robot</title>
     <link rel="manifest" href="manifest.json">
-   <style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #121212;
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-    }
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: #1e1e1e;
-        border-bottom: 1px solid #333;
-    }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
 
-    .btn-ble {
-        background-color: #007acc;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 5px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
+        .btn-ble {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
 
-    .btn-ble.connected {
-        background-color: #28a745;
-    }
+        .btn-ble.connected {
+            background-color: #28a745;
+        }
 
-    .main-container {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-        align-items: flex-start;
-        background-color: #121212;
-    
-        /* ◄ CLAVE: Dejamos 15px arriba, abajo e izquierda, pero 0px a la derecha */
-        padding: 15px 0px 15px 15
-    }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            align-items: flex-start;
+            background-color: #121212;
+            padding: 15px 15px 15px 15px;
+            gap: 15px;
+        }
 
-    /* --- EL CONTENEDOR PADRE CON ALTURA CONFIGURADA --- */
-    .tarjeta-control {
-        display: inline-flex;         /* ◄ CLAVE: Hace que la tarjeta mida EXACTAMENTE lo que sumen los controles y la imagen */
-        flex-direction: row;
-        background-color: #181818;
-        border: 2px solid #444;
-        border-radius: 12px;
-        overflow: hidden;
-    
-        height: 275px !important;     /* Mantiene tu altura perfectamente clavada */
-        max-height: 275px !important; 
-    
-        /* ⚠️ ELIMINAMOS EL WIDTH: 95% QUE LO ESTIRABA DE MÁS ⚠️ */
-        width: auto;                  /* Deja que el contenido defina el ancho natural */
-        max-width: 100%;              /* Evita que se salga en pantallas muy pequeñas */
-    }
+        /* --- TARJETA DE CONTROL --- */
+        .tarjeta-control {
+            display: inline-flex;
+            flex-direction: row;
+            background-color: #181818;
+            border: 2px solid #444;
+            border-radius: 12px;
+            overflow: hidden;
+            height: 275px !important;
+            max-height: 275px !important;
+            width: auto;
+            max-width: 100%;
+        }
 
-    /* --- PANEL DE SLIDERS --- */
-    .controls-panel {
-        width: 300px;            /* ◄ CLAVE: Deja de ser flexible. Elige el ancho que quieras para los sliders (ej. 300px, 320px o 350px) */
-        min-width: 300px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        background-color: #181818;
-        border: 1px solid #333;
-        border-radius: 8px 0 0 8px; 
-        box-sizing: border-box;
-        height: 100%;
-    }
+        /* --- PANEL DE SLIDERS --- */
+        .controls-panel {
+            width: 300px;
+            min-width: 300px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background-color: #181818;
+            border: 1px solid #333;
+            border-radius: 8px 0 0 8px; 
+            box-sizing: border-box;
+            height: 100%;
+        }
 
-    .speed-panel {
-        border-bottom: 2px solid #333;
-        padding-bottom: 6px;
-        margin-bottom: 2px;
-    }
+        .speed-panel {
+            border-bottom: 2px solid #333;
+            padding-bottom: 6px;
+            margin-bottom: 2px;
+        }
 
-    .control-group {
-        display: flex;
-        align-items: center;
-        gap: 2px;                /* ◄ REDUCIDO: Menos separación entre el texto, el slider y la caja */
-        background: #222;
-        padding: 2px 3px;        /* ◄ CLAVE: Reducido de 12px a solo 5px en los laterales para eliminar el espacio muerto */
-        border-radius: 8px;
-        border: 1px solid #333;
-        height: 32px;
-        box-sizing: border-box;
-    }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: #222;
+            padding: 2px 3px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            height: 32px;
+            box-sizing: border-box;
+        }
 
-    .label-name {
-        width: 55px !important;     /* ◄ Reducido al mínimo para pegar el texto al slider */
-        min-width: 55px !important; /* Evita que el navegador lo deforme */
-        font-weight: bold;
-        font-size: 0.8rem;
-        white-space: nowrap;
-        overflow: hidden;
-    }
+        .label-name {
+            width: 55px !important;
+            min-width: 55px !important;
+            font-weight: bold;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+        }
 
-    .slider {
-        flex: 2;             /* ◄ CLAVE: Le da prioridad absoluta al slider para que sea el que más espacio gane */
-        min-width: 0;
-        accent-color: #007acc;
-        cursor: pointer;
-    }
+        .slider {
+            flex: 2;
+            min-width: 0;
+            accent-color: #007acc;
+            cursor: pointer;
+        }
 
-    .angle-box {
-        width: 45px;
-        min-width: 45px;
-        background-color: #000;
-        border: 1px solid #444;
-        border-radius: 4px;
-        text-align: center;
-        padding: 2px 0;
-        font-family: monospace;
-        font-size: 0.8rem;
-        color: #00ffcc;
-    }
+        .angle-box {
+            width: 45px;
+            min-width: 45px;
+            background-color: #000;
+            border: 1px solid #444;
+            border-radius: 4px;
+            text-align: center;
+            padding: 2px 0;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #00ffcc;
+        }
 
-    /* --- VISOR DERECHO TOTALMENTE FRENADO --- */
-    .viewer-panel {
-        flex: 1;                 /* ◄ CLAVE: Ahora este es el que absorbe todo el espacio libre de la PC */
-        display: flex;
-        justify-content: flex-start; 
-        align-items: center;
-        background-color: #121212;
-        border: 1px solid #333;
-        border-left: none; 
-        border-radius: 0 8px 8px 0; 
-        box-sizing: border-box;
-        height: 100%;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-    }
+        /* --- VISOR DERECHO --- */
+        .viewer-panel {
+            flex: 1;
+            display: flex;
+            justify-content: flex-start; 
+            align-items: center;
+            background-color: #121212;
+            border: 1px solid #333;
+            border-left: none; 
+            border-radius: 0 8px 8px 0; 
+            box-sizing: border-box;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
 
-    .viewer-panel img {
-        height: 100% !important;
-        width: auto !important;
-        object-fit: contain;
-        display: block;
-        margin-left: 0 !important; /* Pegada al ras izquierdo de su contenedor */
-        margin-right: auto;
-    }
-</style>
+        .viewer-panel img {
+            height: 100% !important;
+            width: auto !important;
+            object-fit: contain;
+            display: block;
+            margin-left: 0 !important;
+            margin-right: auto;
+        }
+
+        /* --- ESTILOS PANEL MEMO / RECORDER --- */
+        .memo-panel {
+            width: 100%;
+            max-width: 650px;
+            background-color: #181818;
+            border: 2px solid #444;
+            border-radius: 12px;
+            padding: 12px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .memo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-memo {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-play { background-color: #28a745; color: white; }
+        .btn-clear { background-color: #dc3545; color: white; }
+        .btn-file { background-color: #007acc; color: white; }
+
+        .file-label {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        textarea.memo-box {
+            width: 100%;
+            height: 140px;
+            background-color: #0d0d0d;
+            color: #00ffcc;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        /* --- MODAL CONFIRMACIÓN BORRADO --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background-color: #1e1e1e;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+    </style>
 </head>
 <body>
 
@@ -190,7 +277,36 @@
                 <img src="RobotArmPic.png" alt="Brazo Robot">
             </div>
 
-        </div> </div>
+        </div>
+
+        <!-- PANEL DE MEMO / GRABADOR DE MOVIMIENTOS -->
+        <div class="memo-panel">
+            <div class="memo-controls">
+                <button class="btn-memo btn-play" onclick="playMemo()">▶️ Reproducir</button>
+                <button class="btn-memo btn-clear" onclick="solicitarLimpieza()">🗑️ Borrar</button>
+                <button class="btn-memo btn-file" onclick="guardarArchivo()">💾 Guardar .txt</button>
+                <label class="btn-memo btn-file file-label">
+                    📂 Cargar .txt
+                    <input type="file" id="fileInput" accept=".txt" onchange="cargarArchivo(event)">
+                </label>
+            </div>
+            <textarea id="memoBox" class="memo-box" placeholder="Los comandos enviados con sus deltas de tiempo (ms) se registrarán aquí automáticamente..."></textarea>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN AL BORRAR -->
+    <div id="modalConfirm" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0;">⚠️ Confirmación</h3>
+            <p style="font-size: 0.9rem; color: #ccc;">¿Deseas guardar la secuencia actual en un archivo .txt antes de borrar?</p>
+            <div class="modal-buttons">
+                <button class="btn-memo btn-file" onclick="responderBorrado('si')">💾 Sí, Guardar y Borrar</button>
+                <button class="btn-memo btn-clear" onclick="responderBorrado('no')">🗑️ No, Solo Borrar</button>
+                <button class="btn-memo" style="background:#555; color:white;" onclick="responderBorrado('cancelar')">✖️ Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         if ('serviceWorker' in navigator) {
@@ -201,6 +317,8 @@
         const connectBtn = document.getElementById('connectBle');
         const speedSlider = document.getElementById('speedSlider');
         const speedBox = document.getElementById('speedBox');
+
+        let tiempoUltimoComando = 0;
 
         speedSlider.addEventListener('input', () => {
             speedBox.innerText = speedSlider.value + '°/s';
@@ -250,7 +368,8 @@
 
         function enviarTrama(articulacion, angulo) {
             const velocidad = speedSlider.value;
-            const cadena = `${articulacion}:${angulo},v:${velocidad}\n`;
+            const tramaSinSalto = `${articulacion}:${angulo},v:${velocidad}`;
+            const cadena = tramaSinSalto + '\n';
             
             console.log("Enviando por BLE:", cadena);
 
@@ -259,6 +378,135 @@
                 txCharacteristic.writeValue(encoder.encode(cadena))
                     .catch(err => console.log("Error al transmitir por BLE:", err));
             }
+
+            // Registrar en Memo con delta de tiempo
+            registrarEnMemo(tramaSinSalto);
+        }
+
+        // --- REGISTRO AUTOMÁTICO EN EL MEMO ---
+        function registrarEnMemo(comando) {
+            const ahora = Date.now();
+            const memo = document.getElementById('memoBox');
+
+            let delayRelativo = 0;
+            if (memo.value.trim() !== "" && tiempoUltimoComando > 0) {
+                delayRelativo = ahora - tiempoUltimoComando;
+            }
+
+            tiempoUltimoComando = ahora;
+            memo.value += `${delayRelativo},${comando}\n`;
+            memo.scrollTop = memo.scrollHeight;
+        }
+
+        // --- REPRODUCIR MEMO ---
+        async function playMemo() {
+            const memo = document.getElementById('memoBox');
+            const texto = memo.value.trim();
+            if (!texto) return;
+
+            const lineas = texto.split('\n');
+            console.log("--- Reproduciendo secuencia ---");
+
+            for (let i = 0; i < lineas.length; i++) {
+                const linea = lineas[i].trim();
+                if (!linea) continue;
+
+                const partes = linea.split(',');
+                if (partes.length < 2) continue;
+
+                const delayRelativo = parseInt(partes[0]);
+                // Reconstruir el comando en caso de que contenga comas adicionales
+                const comando = partes.slice(1).join(','); 
+
+                if (delayRelativo > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delayRelativo));
+                }
+
+                // Transmitir por BLE
+                if (txCharacteristic) {
+                    const encoder = new TextEncoder();
+                    txCharacteristic.writeValue(encoder.encode(comando + '\n'))
+                        .catch(err => console.log("Error en Play por BLE:", err));
+                }
+
+                // Actualizar sliders visualmente si el comando coincide con alguna articulación
+                actualizarInterfazPorComando(comando);
+            }
+
+            console.log("--- Fin de la reproducción ---");
+        }
+
+        function actualizarInterfazPorComando(comando) {
+            // Ejemplo de comando: pinza:90,v:10
+            const partes = comando.split(',');
+            if (partes.length > 0) {
+                const parArticulacion = partes[0].split(':');
+                if (parArticulacion.length === 2) {
+                    const artId = parArticulacion[0];
+                    const anguloVal = parArticulacion[1];
+
+                    const slider = document.getElementById(artId);
+                    const box = document.getElementById(artId + 'Box');
+                    if (slider && box) {
+                        slider.value = anguloVal;
+                        box.innerText = anguloVal + '°';
+                    }
+                }
+            }
+        }
+
+        // --- MANEJO DE ARCHIVOS Y LIMPIEZA ---
+        function solicitarLimpieza() {
+            const texto = document.getElementById('memoBox').value.trim();
+            if (!texto) {
+                limpiarDirecto();
+                return;
+            }
+            document.getElementById('modalConfirm').style.display = 'flex';
+        }
+
+        function responderBorrado(opcion) {
+            document.getElementById('modalConfirm').style.display = 'none';
+
+            if (opcion === 'si') {
+                guardarArchivo();
+                limpiarDirecto();
+            } else if (opcion === 'no') {
+                limpiarDirecto();
+            }
+        }
+
+        function limpiarDirecto() {
+            document.getElementById('memoBox').value = "";
+            tiempoUltimoComando = 0;
+        }
+
+        function guardarArchivo() {
+            const texto = document.getElementById('memoBox').value;
+            if (!texto.trim()) {
+                alert("El Memo está vacío, no hay nada que guardar.");
+                return;
+            }
+
+            const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+            const enlace = document.createElement("a");
+            enlace.download = "rutina_brazo.txt";
+            enlace.href = URL.createObjectURL(blob);
+            enlace.click();
+            URL.revokeObjectURL(enlace.href);
+        }
+
+        function cargarArchivo(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                document.getElementById('memoBox').value = e.target.result;
+                tiempoUltimoComando = 0;
+            };
+            lector.readAsText(archivo);
+            event.target.value = '';
         }
     </script>
 </body>
