@@ -222,6 +222,7 @@
             display: block;
             margin: 0;
             padding: 1px 0;
+            transition: background 0.15s ease, color 0.15s ease;
         }
 
         .cmd-valid {
@@ -232,6 +233,15 @@
             color: #ff4d4d !important;
             background-color: rgba(255, 77, 77, 0.15);
             text-decoration: underline wavy #ff4d4d;
+            border-radius: 2px;
+        }
+
+        /* CLASE DE LÍNEA EN EJECUCIÓN (PLAY) */
+        .cmd-executing {
+            background-color: rgba(255, 153, 0, 0.25) !important;
+            color: #ffcc00 !important;
+            border-left: 3px solid #ff9900;
+            padding-left: 4px;
             border-radius: 2px;
         }
 
@@ -269,7 +279,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico v1.6</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Mando Brazo Robótico</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -301,7 +311,7 @@
         <!-- PANEL DE MEMO / EDITABLE CON RESALTADO -->
         <div class="memo-panel">
             <div class="memo-controls">
-                <button class="btn-memo btn-play" onclick="playMemo()">▶️ Reproducir</button>
+                <button id="btnPlay" class="btn-memo btn-play" onclick="playMemo()">▶️ Reproducir</button>
                 <button class="btn-memo btn-clear" onclick="solicitarLimpieza()">🗑️ Borrar</button>
                 <button class="btn-memo btn-file" onclick="guardarArchivo()">💾 Guardar .txt</button>
                 <label class="btn-memo btn-file file-label">
@@ -338,6 +348,7 @@
         const speedSlider = document.getElementById('speedSlider');
         const speedBox = document.getElementById('speedBox');
         const memoBox = document.getElementById('memoBox');
+        const btnPlay = document.getElementById('btnPlay');
 
         let tiempoUltimoComando = 0;
 
@@ -428,21 +439,19 @@
             memoBox.scrollTop = memoBox.scrollHeight;
         }
 
-        // --- VALIDACIÓN EN ENTER: EVALÚA SOLO EL NODO ACTUAL Y CREA UNO NUEVO ---
+        // --- VALIDACIÓN EN ENTER ---
         memoBox.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Controlamos la creación de líneas para no romper el cursor
+                e.preventDefault();
 
                 const sel = window.getSelection();
                 if (!sel.rangeCount) return;
 
-                // 1. Obtener el contenedor o línea donde está el cursor actualmente
                 let nodoActual = sel.anchorNode;
                 while (nodoActual && nodoActual.parentNode !== memoBox && nodoActual !== memoBox) {
                     nodoActual = nodoActual.parentNode;
                 }
 
-                // Si el texto está directamente en memoBox sin div, lo rodeamos
                 if (!nodoActual || nodoActual === memoBox) {
                     const textoCompleto = memoBox.innerText.trim();
                     memoBox.innerHTML = '';
@@ -452,7 +461,6 @@
                     memoBox.appendChild(nodoActual);
                 }
 
-                // 2. Validar el texto de la línea actual antes de bajar
                 const textoLinea = nodoActual.innerText.replace(/\u00a0/g, " ").trim();
                 if (textoLinea) {
                     const esValido = regexComandoValido.test(textoLinea);
@@ -461,10 +469,9 @@
                     nodoActual.className = 'cmd-line';
                 }
 
-                // 3. Crear la NUEVA línea vacía justo debajo y mover el cursor ahí
                 const nuevaLinea = document.createElement('div');
                 nuevaLinea.className = 'cmd-line';
-                nuevaLinea.innerHTML = '<br>'; // Mantiene el alto de la línea vacía
+                nuevaLinea.innerHTML = '<br>';
 
                 if (nodoActual.nextSibling) {
                     memoBox.insertBefore(nuevaLinea, nodoActual.nextSibling);
@@ -472,7 +479,6 @@
                     memoBox.appendChild(nuevaLinea);
                 }
 
-                // 4. Mover el cursor al inicio de la nueva línea
                 const rangeNuevo = document.createRange();
                 rangeNuevo.setStart(nuevaLinea, 0);
                 rangeNuevo.collapse(true);
@@ -483,7 +489,7 @@
             }
         });
 
-        // --- DETECCIÓN DE PEGAR DESDE EL PORTAPAPELES (PASTE) ---
+        // --- DETECCIÓN DE PASTE ---
         memoBox.addEventListener('paste', (e) => {
             e.preventDefault();
             
@@ -502,7 +508,7 @@
             reparsearLineas();
         });
 
-        // --- REPARSIDEADO COMPLETO (Se usa en blur, paste, cargar archivo y Play) ---
+        // --- REPARSIDEADO Y COLOREADO DE SINTAXIS ---
         function reparsearLineas() {
             const textoCompleto = memoBox.innerText.replace(/\u00a0/g, " ");
             const lineas = textoCompleto.split('\n');
@@ -528,21 +534,33 @@
             });
         }
 
-        // --- REPRODUCIR MEMO ---
+        // --- REPRODUCIR MEMO CON RESALTADO EN TIEMPO REAL ---
         async function playMemo() {
             reparsearLineas(); 
             const lineasDivs = memoBox.querySelectorAll('.cmd-line');
 
             if (lineasDivs.length === 0) return;
 
-            console.log("--- Reproduciendo secuencia válida ---");
+            // Cambiamos el texto del botón para indicar reproducción activa
+            btnPlay.innerText = "⏳ Ejecutando...";
+            btnPlay.disabled = true;
+
+            console.log("--- Reproduciendo secuencia con resaltado ---");
 
             for (let i = 0; i < lineasDivs.length; i++) {
                 const elemento = lineasDivs[i];
 
+                // Limpiar cualquier resaltado de la iteración anterior
+                lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
+
+                // Ignorar líneas vacías o en rojo
                 if (elemento.classList.contains('cmd-invalid') || !elemento.innerText.trim()) {
                     continue; 
                 }
+
+                // 🌟 RESALTAR LA LÍNEA ACTUAL EN TIEMPO REAL 🌟
+                elemento.classList.add('cmd-executing');
+                elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
                 const linea = elemento.innerText.trim();
                 const partes = linea.split(',');
@@ -551,18 +569,26 @@
                 const delayRelativo = parseInt(partes[0]);
                 const comando = partes.slice(1).join(','); 
 
+                // Esperar el tiempo correspondiente
                 if (delayRelativo > 0) {
                     await new Promise(resolve => setTimeout(resolve, delayRelativo));
                 }
 
+                // Transmitir trama BLE
                 if (txCharacteristic) {
                     const encoder = new TextEncoder();
                     txCharacteristic.writeValue(encoder.encode(comando + '\n'))
                         .catch(err => console.log("Error en Play por BLE:", err));
                 }
 
+                // Mover slider e interfaz
                 actualizarInterfazPorComando(comando);
             }
+
+            // Al terminar la secuencia, limpiamos el resaltado y restauramos el botón
+            lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
+            btnPlay.innerText = "▶️ Reproducir";
+            btnPlay.disabled = false;
 
             console.log("--- Fin de la reproducción ---");
         }
