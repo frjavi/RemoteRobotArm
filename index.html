@@ -202,7 +202,7 @@
             font-family: monospace;
             font-size: 0.85rem;
             font-weight: bold;
-            display: none; /* Oculto por defecto */
+            display: none;
             align-items: center;
             gap: 6px;
         }
@@ -295,7 +295,7 @@
 <body>
 
     <header>
-        <h2 style="margin:0; font-size:1.3rem;">Brazo Robót 1.1</h2>
+        <h2 style="margin:0; font-size:1.3rem;">Brazo Robótico 1.2</h2>
         <button id="connectBle" class="btn-ble">🔌 Conectar BLE</button>
     </header>
 
@@ -375,7 +375,7 @@
 
         let tiempoUltimoComando = 0;
 
-        // Expresión Regular estricta: Solo permite las 6 articulaciones válidas con sus dos puntos
+        // Expresión Regular estricta
         const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
@@ -415,7 +415,7 @@
                     console.log("No usa servicio UART estándar, pero conectado.");
                 }
 
-                connectBtn.innerText = "🟢 ¡Conectado!";
+                connectBtn.innerText = "🟢 BLE Conectado";
                 connectBtn.classList.add('connected');
             } catch (error) {
                 console.error(error);
@@ -424,18 +424,28 @@
             }
         });
 
-        function enviarTrama(articulacion, angulo) {
-            const velocidad = speedSlider.value;
-            const tramaSinSalto = `${articulacion}:${angulo},v:${velocidad}`;
-            const cadena = tramaSinSalto + '\n';
+        // --- SISTEMA UNIFICADO DE TRANSMISIÓN HÍBRIDO (BLE / WI-FI) ---
+        function transmitirComando(comando) {
+            const cadena = comando + '\n';
             
-            console.log("Enviando por BLE:", cadena);
-
             if (txCharacteristic) {
+                // 1. Envío por BLE si la característica está activa
                 const encoder = new TextEncoder();
                 txCharacteristic.writeValue(encoder.encode(cadena))
                     .catch(err => console.log("Error al transmitir por BLE:", err));
+            } else {
+                // 2. Fallback HTTP Wi-Fi si no hay BLE (servido desde el ESP32)
+                fetch(`/cmd?data=${encodeURIComponent(comando)}`)
+                    .catch(err => console.log("Modo local sin conexión ESP32 / Error HTTP:", err));
             }
+        }
+
+        function enviarTrama(articulacion, angulo) {
+            const velocidad = speedSlider.value;
+            const tramaSinSalto = `${articulacion}:${angulo},v:${velocidad}`;
+            
+            console.log("Enviando comando:", tramaSinSalto);
+            transmitirComando(tramaSinSalto);
 
             registrarEnMemo(tramaSinSalto);
         }
@@ -601,11 +611,11 @@
                         clearInterval(intervalo);
                         resolve();
                     }
-                }, 50); // Actualiza cada 50ms para fluidez
+                }, 50);
             });
         }
 
-        // --- REPRODUCIR MEMO CON TIMER VISUAL ---
+        // --- REPRODUCIR MEMO ---
         async function playMemo() {
             purgarLineasVacias(); 
 
@@ -614,7 +624,7 @@
 
             btnPlay.innerText = "⏳ Ejecutando...";
             btnPlay.disabled = true;
-            timerBadge.style.display = 'inline-flex'; // Mostramos la insignia
+            timerBadge.style.display = 'inline-flex';
 
             console.log("--- Reproduciendo secuencia ---");
 
@@ -644,22 +654,17 @@
                 elemento.classList.add('cmd-executing');
                 elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                // 3. ENVIAR POR BLE Y ACTUALIZAR SLIDERS
-                if (txCharacteristic) {
-                    const encoder = new TextEncoder();
-                    txCharacteristic.writeValue(encoder.encode(comando + '\n'))
-                        .catch(err => console.log("Error en Play por BLE:", err));
-                }
-
+                // 3. ENVIAR POR TRANSMISOR HÍBRIDO (BLE / WI-FI) Y ACTUALIZAR SLIDERS
+                transmitirComando(comando);
                 actualizarInterfazPorComando(comando);
             }
 
-            // 4. PAUSA FINAL DE 1 SEGUNDO EN LA ÚLTIMA LÍNEA CON TIMER
+            // 4. PAUSA FINAL DE 1 SEGUNDO EN LA ÚLTIMA LÍNEA
             await esperarConTimer(1000);
 
             // Restablecer interfaz
             lineasDivs.forEach(el => el.classList.remove('cmd-executing'));
-            timerBadge.style.display = 'none'; // Ocultamos la insignia
+            timerBadge.style.display = 'none';
             btnPlay.innerText = "▶️ Reproducir";
             btnPlay.disabled = false;
 
