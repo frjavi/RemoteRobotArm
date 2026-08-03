@@ -303,14 +303,16 @@
         
         <div class="tarjeta-control">
             <div class="controls-panel">
-                <div class="speed-panel">
-                    <div class="control-group" style="background: #2a2015; border-color: #ff990044;">
+                <div class="speed-panel" style="display: flex; gap: 8px; align-items: center;">
+                    <div class="control-group" style="background: #2a2015; border-color: #ff990044; flex: 1;">
                         <span class="label-name" style="color: #ff9900;">Velocidad</span>
                         <input type="range" min="25" max="100" value="50" class="slider" id="speedSlider" style="accent-color: #ff9900;">
                         <span class="angle-box" id="speedBox" style="color: #ff9900;">50°/s</span>
                     </div>
+                    <button class="btn-memo" style="background-color: #ff9900; color: #121212; height: 32px; padding: 0 10px;" onclick="irAHome()">
+                        🏠 Home
+                    </button>
                 </div>
-
                 <div class="control-group"><span class="label-name">Pinza</span><input type="range" min="15" max="80" value="15" class="slider" id="pinza"><span class="angle-box" id="pinzaBox">15°</span></div>
                 <div class="control-group"><span class="label-name">M. Giro</span><input type="range" min="0" max="180" value="90" class="slider" id="munecaGiro"><span class="angle-box" id="munecaGiroBox">90°</span></div>
                 <div class="control-group"><span class="label-name">Muñeca</span><input type="range" min="0" max="180" value="90" class="slider" id="muneca"><span class="angle-box" id="munecaBox">90°</span></div>
