@@ -378,7 +378,7 @@
         let tiempoUltimoComando = 0;
 
         // Expresión Regular estricta
-        const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion):\d+,v:\d+$/;
+        const regexComandoValido = /^\d+,(pinza|munecaGiro|muneca|codo|hombro|rotacion|home):\d+,v:\d+$/;
 
         speedSlider.addEventListener('input', () => {
             speedBox.innerText = speedSlider.value + '°/s';
@@ -745,6 +745,37 @@
             lector.readAsText(archivo);
             event.target.value = '';
         }
+        function irAHome() {
+            const velocidad = speedSlider.value;
+            const tramaHome = `home:0,v:${velocidad}`;
+    
+            console.log("Enviando comando Home:", tramaHome);
+    
+            // Transmite por BLE / Wi-Fi
+            transmitirComando(tramaHome);
+    
+            // Opcional: Registra el movimiento en el Memo
+            registrarEnMemo(tramaHome);
+    
+            // Resetea visualmente los sliders en la interfaz a su posición por defecto (p. ej. 90°)
+            const posicionesHome = {
+                pinza: 15,
+                munecaGiro: 90,
+                muneca: 90,
+                codo: 90,
+                hombro: 90,
+                rotacion: 90
+            };
+    
+            Object.keys(posicionesHome).forEach(artId => {
+                const slider = document.getElementById(artId);
+                const box = document.getElementById(artId + 'Box');
+                if (slider && box) {
+                    slider.value = posicionesHome[artId];
+                    box.innerText = posicionesHome[artId] + '°';
+                }
+            });
+        }        
     </script>
 </body>
 </html>
